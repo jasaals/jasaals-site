@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#g)"/>
+  <circle cx="950" cy="180" r="140" fill="#7dd3fc" fill-opacity="0.18"/>
+  <text x="60" y="120" font-family="Inter, Arial, sans-serif" font-size="58" fill="#e2e8f0">JASAALS</text>
+  <text x="60" y="190" font-family="Inter, Arial, sans-serif" font-size="30" fill="#93c5fd">Drop your photo in /images/gallery or /images/vision</text>
+</svg>

@@ -1,0 +1,42 @@
+:root {
+  --bg: #0d1117;
+  --card: #161b22;
+  --text: #e6edf3;
+  --muted: #9aa4b2;
+  --accent: #7dd3fc;
+  --accent2: #c084fc;
+  --border: #2a3340;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: radial-gradient(1200px 700px at 10% -10%, #1a2030, var(--bg));
+  color: var(--text);
+}
+.wrap { width: min(1100px, 92%); margin: 0 auto; }
+.site-header { position: sticky; top: 0; z-index: 9; backdrop-filter: blur(8px); background: rgba(13,17,23,0.7); border-bottom: 1px solid var(--border); }
+.site-header .wrap { display: flex; justify-content: space-between; gap: 1rem; align-items: end; padding: 1rem 0; }
+.eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .08em; font-size: .78rem; margin: 0; }
+h1 { margin: 0; font-size: clamp(1.8rem, 3vw, 2.6rem); }
+.subtitle { margin: .2rem 0 0; color: var(--muted); }
+nav { display: flex; flex-wrap: wrap; gap: .8rem; }
+nav a { color: var(--text); text-decoration: none; border: 1px solid var(--border); border-radius: 999px; padding: .45rem .8rem; font-size: .9rem; }
+nav a:hover { border-color: var(--accent); }
+main { padding: 1.2rem 0 2rem; display: grid; gap: 1rem; }
+.card { background: linear-gradient(180deg, #171e2a, var(--card)); border: 1px solid var(--border); border-radius: 16px; padding: 1rem; }
+.card h2 { margin-top: .2rem; }
+.hint { color: var(--muted); margin-top: -0.35rem; }
+.timeline { display: grid; gap: .8rem; }
+.timeline-item { border-left: 2px solid var(--accent2); padding-left: .8rem; }
+.timeline-item h3 { margin: 0; font-size: 1rem; }
+.timeline-item p { margin: .2rem 0 0; color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .8rem; }
+.tile { background: #0f141c; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.tile img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: #0b0f14; }
+.tile .meta { padding: .6rem; }
+.tile .meta h4 { margin: 0 0 .2rem; font-size: .95rem; }
+.tile .meta p { margin: 0; color: var(--muted); font-size: .88rem; }
+.dream-list { margin: 0; padding-left: 1.2rem; display: grid; gap: .45rem; }
+.footer { color: var(--muted); padding-bottom: 2rem; }
+code { background: #0b1220; border: 1px solid var(--border); border-radius: 6px; padding: .1rem .35rem; }

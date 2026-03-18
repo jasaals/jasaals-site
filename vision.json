@@ -1,0 +1,17 @@
+[
+  {
+    "image": "./placeholder.svg",
+    "title": "Garden + orchard zone",
+    "note": "Fruit trees, raised beds, native pollinator strip."
+  },
+  {
+    "image": "./placeholder.svg",
+    "title": "Workshop + maker barn",
+    "note": "Space for woodworking, repairs, and future projects."
+  },
+  {
+    "image": "./placeholder.svg",
+    "title": "Warm family kitchen",
+    "note": "Large island, sunlight, and room for gatherings."
+  }
+]

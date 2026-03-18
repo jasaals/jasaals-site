@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JASAALS</title>
+    <meta name="description" content="Jeffrey + Anna Leah private story space" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">Private Family Space</p>
+          <h1>JASAALS</h1>
+          <p class="subtitle">Jeffrey Alexander Spears + Anna Leah Spears</p>
+        </div>
+        <nav>
+          <a href="#story">Story</a>
+          <a href="#gallery">Gallery</a>
+          <a href="#vision">Vision Board</a>
+          <a href="#dreams">Dream List</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="story" class="card">
+        <h2>Our Story</h2>
+        <div id="story-list" class="timeline"></div>
+      </section>
+
+      <section id="gallery" class="card">
+        <h2>Favorite Pictures</h2>
+        <p class="hint">Drop photos in <code>images/gallery/</code> and update <code>content/gallery.json</code>.</p>
+        <div id="gallery-grid" class="grid"></div>
+      </section>
+
+      <section id="vision" class="card">
+        <h2>Homestead Vision Board</h2>
+        <p class="hint">Inspiration + notes for what we want to build.</p>
+        <div id="vision-grid" class="grid"></div>
+      </section>
+
+      <section id="dreams" class="card">
+        <h2>Things We Want to Build + Do</h2>
+        <ul id="dream-list" class="dream-list"></ul>
+      </section>
+    </main>
+
+    <footer class="wrap footer">
+      <p>Private for now. Public pages can be split out later for wedding photos/blog.</p>
+    </footer>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
