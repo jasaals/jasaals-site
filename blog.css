@@ -9,6 +9,15 @@
   color: var(--accent);
 }
 
+/* Section header links (e.g., "Our Stories" on homepage) */
+.section-link {
+  color: inherit;
+  text-decoration: none;
+}
+.section-link:hover {
+  color: var(--accent);
+}
+
 /* Active nav state */
 nav a.active {
   border-color: var(--accent);
@@ -51,11 +60,17 @@ nav a.active {
   background: #0b0f14;
 }
 
+/* Story card content - added left padding for cards without cover images */
 .story-card-content {
-  padding: 1.25rem 1.25rem 1.25rem 0;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* When there's no cover image, the card is just one column */
+.story-card:not(:has(.story-cover)) {
+  grid-template-columns: 1fr;
 }
 
 .story-date {

@@ -1,4 +1,4 @@
-# JASAALS v2 (Private Story Site + Blog)
+# JASAALS v3 (Private Story Site + Blog)
 
 A lightweight static site for Jeffrey + Anna Leah:
 - **Blog/Stories** with Markdown support

@@ -1,16 +1,21 @@
 [
   {
-    "image": "./placeholder.svg",
+    "image": "./images/vision/garden-orchard.png",
     "title": "Garden + orchard zone",
-    "note": "Fruit trees, raised beds, native pollinator strip."
+    "note": "Fruit trees, raised beds, creek, and pond."
   },
   {
-    "image": "./placeholder.svg",
+    "image": "./images/vision/root-cellar.png",
+    "title": "Self-sufficient farming",
+    "note": "Organic food independence."
+  },
+  {
+    "image": "./images/vision/workshop.png",
     "title": "Workshop + maker barn",
     "note": "Space for woodworking, repairs, and future projects."
   },
   {
-    "image": "./placeholder.svg",
+    "image": "./images/vision/kitchen.png",
     "title": "Warm family kitchen",
     "note": "Large island, sunlight, and room for gatherings."
   }
