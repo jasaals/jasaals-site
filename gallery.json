@@ -1,12 +1,67 @@
 [
   {
-    "image": "./placeholder.svg",
-    "title": "Add your first favorite",
-    "note": "Swap this with a real photo from your moments together."
+    "image": "./images/gallery/20250911_213518.jpg",
+    "title": "September 11, 2025",
+    "note": ""
   },
   {
-    "image": "./placeholder.svg",
-    "title": "Proposal memory",
-    "note": "Place one of your strongest photos here."
+    "image": "./images/gallery/20250911_214109.jpg",
+    "title": "September 11, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20250911_214151.jpg",
+    "title": "September 11, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20250913_153741.jpg",
+    "title": "September 13, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20250913_155037.jpg",
+    "title": "September 13, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20250913_191656.jpg",
+    "title": "September 13, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20250916_184935.jpg",
+    "title": "September 16, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20250920_111117.jpg",
+    "title": "September 20, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20250929_174708.jpg",
+    "title": "September 29, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20251002_181153.jpg",
+    "title": "October 2, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20251011_175430.jpg",
+    "title": "October 11, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20251012_172039.jpg",
+    "title": "October 12, 2025",
+    "note": ""
+  },
+  {
+    "image": "./images/gallery/20251101_002054.jpg",
+    "title": "November 1, 2025",
+    "note": ""
   }
 ]
