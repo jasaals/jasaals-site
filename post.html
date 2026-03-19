@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading... — JASAALS</title>
+    <meta name="description" content="A story from Jeffrey + Anna Leah" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./blog.css" />
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">Private Family Space</p>
+          <a href="./index.html" class="logo-link"><h1>JASAALS</h1></a>
+          <p class="subtitle">Jeffrey Alexander Spears + Anna Leah Spears</p>
+        </div>
+        <nav>
+          <a href="./index.html">Home</a>
+          <a href="./stories.html">Stories</a>
+          <a href="./index.html#gallery">Gallery</a>
+          <a href="./index.html#vision">Vision Board</a>
+          <a href="./index.html#dreams">Dream List</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <article class="card post-page">
+        <a href="./stories.html" class="back-link">← All Stories</a>
+        <header class="post-header" id="post-header">
+          <span class="story-date" id="post-date"></span>
+          <h1 id="post-title">Loading...</h1>
+        </header>
+        <div id="post-cover"></div>
+        <div id="post-content" class="post-content">
+          <p class="loading-text">Loading story...</p>
+        </div>
+      </article>
+    </main>
+
+    <footer class="wrap footer">
+      <div class="post-nav" id="post-nav"></div>
+      <p><a href="./stories.html">← Back to All Stories</a></p>
+    </footer>
+
+    <script type="module">
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get('slug');
+
+      const postTitle = document.getElementById('post-title');
+      const postDate = document.getElementById('post-date');
+      const postCover = document.getElementById('post-cover');
+      const postContent = document.getElementById('post-content');
+      const postNav = document.getElementById('post-nav');
+
+      // Configure marked for safety and features
+      marked.setOptions({
+        breaks: true,
+        gfm: true
+      });
+
+      const fetchJson = async (path) => {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error(`Failed to load ${path}`);
+        return res.json();
+      };
+
+      const fetchText = async (path) => {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error(`Failed to load ${path}`);
+        return res.text();
+      };
+
+      // Custom renderer for responsive images and embeds
+      const renderer = new marked.Renderer();
+      
+      // Wrap images in figure with optional caption
+      renderer.image = function(href, title, text) {
+        // Handle the new token-based API
+        if (typeof href === 'object') {
+          text = href.text || '';
+          title = href.title || '';
+          href = href.href || '';
+        }
+        const caption = title ? `<figcaption>${title}</figcaption>` : '';
+        return `<figure class="post-image"><img src="${href}" alt="${text}" loading="lazy" />${caption}</figure>`;
+      };
+
+      // Support YouTube/Vimeo embeds via custom syntax: ![video](youtube:VIDEO_ID)
+      const originalImage = renderer.image.bind(renderer);
+      renderer.image = function(href, title, text) {
+        // Handle token-based API
+        let actualHref = href;
+        let actualTitle = title;
+        let actualText = text;
+        
+        if (typeof href === 'object') {
+          actualText = href.text || '';
+          actualTitle = href.title || '';
+          actualHref = href.href || '';
+        }
+        
+        if (actualHref.startsWith('youtube:')) {
+          const videoId = actualHref.replace('youtube:', '');
+          return `<div class="video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+        }
+        if (actualHref.startsWith('vimeo:')) {
+          const videoId = actualHref.replace('vimeo:', '');
+          return `<div class="video-embed"><iframe src="https://player.vimeo.com/video/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+        }
+        if (actualHref.startsWith('map:')) {
+          const mapEmbed = actualHref.replace('map:', '');
+          return `<div class="map-embed"><iframe src="https://www.google.com/maps/embed?pb=${mapEmbed}" frameborder="0" allowfullscreen></iframe></div>`;
+        }
+        
+        // Fall back to figure/image
+        const caption = actualTitle ? `<figcaption>${actualTitle}</figcaption>` : '';
+        return `<figure class="post-image"><img src="${actualHref}" alt="${actualText}" loading="lazy" />${caption}</figure>`;
+      };
+
+      marked.use({ renderer });
+
+      (async () => {
+        if (!slug) {
+          postTitle.textContent = 'Post not found';
+          postContent.innerHTML = '<p>No story specified. <a href="./stories.html">View all stories</a>.</p>';
+          return;
+        }
+
+        try {
+          const posts = await fetchJson('./posts/index.json');
+          const post = posts.find(p => p.slug === slug);
+          
+          if (!post) {
+            postTitle.textContent = 'Post not found';
+            postContent.innerHTML = '<p>This story doesn\'t exist. <a href="./stories.html">View all stories</a>.</p>';
+            return;
+          }
+
+          // Update page
+          document.title = `${post.title} — JASAALS`;
+          postTitle.textContent = post.title;
+          postDate.textContent = post.date;
+          
+          if (post.cover) {
+            postCover.innerHTML = `<img src="${post.cover}" alt="${post.title}" class="post-cover-image" />`;
+          }
+
+          // Load and render Markdown
+          const markdown = await fetchText(`./posts/${slug}.md`);
+          postContent.innerHTML = marked.parse(markdown);
+
+          // Build prev/next navigation
+          const currentIndex = posts.findIndex(p => p.slug === slug);
+          let navHtml = '';
+          
+          if (currentIndex > 0) {
+            const prev = posts[currentIndex - 1];
+            navHtml += `<a href="./post.html?slug=${prev.slug}" class="nav-prev">← ${prev.title}</a>`;
+          }
+          if (currentIndex < posts.length - 1) {
+            const next = posts[currentIndex + 1];
+            navHtml += `<a href="./post.html?slug=${next.slug}" class="nav-next">${next.title} →</a>`;
+          }
+          postNav.innerHTML = navHtml;
+
+        } catch (err) {
+          console.error(err);
+          postContent.innerHTML = `<p>Could not load this story. The Markdown file may not exist yet.</p>`;
+        }
+      })();
+    </script>
+  </body>
+</html>

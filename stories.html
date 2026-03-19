@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Our Stories — JASAALS</title>
+    <meta name="description" content="All stories from Jeffrey + Anna Leah" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./blog.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">Private Family Space</p>
+          <a href="./index.html" class="logo-link"><h1>JASAALS</h1></a>
+          <p class="subtitle">Jeffrey Alexander Spears + Anna Leah Spears</p>
+        </div>
+        <nav>
+          <a href="./index.html">Home</a>
+          <a href="./stories.html" class="active">Stories</a>
+          <a href="./index.html#gallery">Gallery</a>
+          <a href="./index.html#vision">Vision Board</a>
+          <a href="./index.html#dreams">Dream List</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="card stories-page">
+        <h2>Our Stories</h2>
+        <p class="page-intro">Moments, milestones, and memories from our journey together.</p>
+        <div id="stories-list" class="stories-grid"></div>
+      </section>
+    </main>
+
+    <footer class="wrap footer">
+      <p><a href="./index.html">← Back to Home</a></p>
+    </footer>
+
+    <script type="module">
+      const storiesEl = document.getElementById('stories-list');
+
+      const fetchJson = async (path) => {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error(`Failed to load ${path}`);
+        return res.json();
+      };
+
+      (async () => {
+        try {
+          const posts = await fetchJson('./posts/index.json');
+          
+          // Sort by date (newest first) - assumes ISO date format or consistent ordering
+          const sorted = [...posts].reverse();
+          
+          storiesEl.innerHTML = sorted.map(post => `
+            <article class="story-card">
+              ${post.cover ? `<img src="${post.cover}" alt="${post.title}" class="story-cover" loading="lazy" />` : ''}
+              <div class="story-card-content">
+                <span class="story-date">${post.date}</span>
+                <h3><a href="./post.html?slug=${post.slug}">${post.title}</a></h3>
+                <p>${post.excerpt}</p>
+                <a href="./post.html?slug=${post.slug}" class="read-more">Read more →</a>
+              </div>
+            </article>
+          `).join('');
+        } catch (err) {
+          console.error(err);
+          storiesEl.innerHTML = `<p>Could not load stories. Make sure <code>posts/index.json</code> exists.</p>`;
+        }
+      })();
+    </script>
+  </body>
+</html>

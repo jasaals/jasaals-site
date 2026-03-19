@@ -21,27 +21,38 @@ const tile = ({ image, title, note }) => `
 
 (async () => {
   try {
-    const [story, gallery, vision, dreams] = await Promise.all([
-      fetchJson('./story.json'),
+    const [posts, gallery, vision, dreams] = await Promise.all([
+      fetchJson('./posts/index.json'),
       fetchJson('./gallery.json'),
       fetchJson('./vision.json'),
       fetchJson('./dreams.json'),
     ]);
 
-    storyEl.innerHTML = story
+    // Show only the 3 most recent posts (last 3 in array, reversed for newest first)
+    const latestPosts = [...posts].slice(-3).reverse();
+    
+    storyEl.innerHTML = latestPosts
       .map((item) => `
-        <article class="timeline-item">
-          <h3>${item.date} — ${item.title}</h3>
-          <p>${item.note}</p>
+        <article class="timeline-item has-post">
+          <h3><a href="./post.html?slug=${item.slug}">${item.date} — ${item.title}</a></h3>
+          <p>${item.excerpt}</p>
+          <a href="./post.html?slug=${item.slug}" class="read-more">Read more →</a>
         </article>
       `)
       .join('');
+    
+    // Add "View all stories" link if there are more than 3
+    if (posts.length > 3) {
+      storyEl.innerHTML += `
+        <p class="view-all"><a href="./stories.html">View all stories →</a></p>
+      `;
+    }
 
     galleryEl.innerHTML = gallery.map(tile).join('');
     visionEl.innerHTML = vision.map(tile).join('');
     dreamsEl.innerHTML = dreams.map((d) => `<li>${d}</li>`).join('');
   } catch (err) {
     console.error(err);
-    storyEl.innerHTML = `<p>Could not load content files yet. Add/update JSON files in <code>content/</code>.</p>`;
+    storyEl.innerHTML = `<p>Could not load content files yet. Add/update JSON files in <code>posts/</code>.</p>`;
   }
 })();
