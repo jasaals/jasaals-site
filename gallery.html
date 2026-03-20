@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gallery — JASAALS</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .polaroid-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 2rem 1.5rem;
+        padding: 0.5rem 0 2rem;
+      }
+      .polaroid {
+        background: #fff;
+        padding: 10px 10px 0 10px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.3);
+        border-radius: 2px;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .polaroid:hover { transform: scale(1.03) rotate(-1deg); box-shadow: 0 8px 28px rgba(0,0,0,0.55); }
+      .polaroid:nth-child(even):hover { transform: scale(1.03) rotate(1deg); }
+      .polaroid-date {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 11px;
+        color: #555;
+        text-align: center;
+        padding: 6px 2px 8px;
+        letter-spacing: 0.04em;
+        margin: 0;
+      }
+      .polaroid-photo {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        display: block;
+        background: #ddd;
+      }
+      .polaroid-caption {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 12px;
+        color: #333;
+        text-align: center;
+        padding: 10px 4px 12px;
+        min-height: 38px;
+        line-height: 1.4;
+        font-style: italic;
+        margin: 0;
+      }
+      .gallery-count { color: var(--muted); font-size: 0.88rem; margin-bottom: 1.2rem; }
+      .back-link {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.9rem;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        display: inline-block;
+        margin-bottom: 1rem;
+        transition: border-color 0.2s;
+      }
+      .back-link:hover { border-color: var(--accent); }
+      #photo-grid-loading { color: var(--muted); padding: 2rem 0; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">Private Family Space</p>
+          <h1>JASAALS</h1>
+          <p class="subtitle">Jeffrey Alexander Spears + Anna Leah Spears</p>
+        </div>
+        <nav>
+          <a href="./index.html">Home</a>
+          <a href="./stories.html">Stories</a>
+          <a href="./gallery.html">Gallery</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="card">
+        <a href="./index.html" class="back-link">← Back to Home</a>
+        <h2>All Photos</h2>
+        <p class="gallery-count" id="photo-count"></p>
+        <div id="photo-grid-loading">Loading photos…</div>
+        <div id="polaroid-grid" class="polaroid-grid" style="display:none;"></div>
+      </section>
+    </main>
+
+    <footer class="wrap footer">
+      <p>Private for now. Public pages can be split out later for wedding photos/blog.</p>
+    </footer>
+
+    <script type="module">
+      const fetchJson = async (path) => {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error(`Failed to load ${path}`);
+        return res.json();
+      };
+      (async () => {
+        try {
+          const gallery = await fetchJson('./gallery.json');
+          const grid = document.getElementById('polaroid-grid');
+          const loading = document.getElementById('photo-grid-loading');
+          const countEl = document.getElementById('photo-count');
+          const sorted = [...gallery].reverse();
+          countEl.textContent = `${sorted.length} photo${sorted.length !== 1 ? 's' : ''}`;
+          grid.innerHTML = sorted.map(photo => `
+            <div class="polaroid">
+              <p class="polaroid-date">${photo.title || ''}</p>
+              <img class="polaroid-photo" src="${photo.image}" alt="${photo.title || 'Photo'}" loading="lazy" />
+              <p class="polaroid-caption">${photo.note || '&nbsp;'}</p>
+            </div>
+          `).join('');
+          loading.style.display = 'none';
+          grid.style.display = 'grid';
+        } catch (err) {
+          console.error(err);
+          document.getElementById('photo-grid-loading').textContent = 'Could not load photos.';
+        }
+      })();
+    </script>
+  </body>
+</html>
