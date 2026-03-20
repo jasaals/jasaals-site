@@ -40,3 +40,87 @@ main { padding: 1.2rem 0 2rem; display: grid; gap: 1rem; }
 .dream-list { margin: 0; padding-left: 1.2rem; display: grid; gap: .45rem; }
 .footer { color: var(--muted); padding-bottom: 2rem; }
 code { background: #0b1220; border: 1px solid var(--border); border-radius: 6px; padding: .1rem .35rem; }
+
+
+/* Gallery Carousel */
+.gallery-carousel-wrapper { width: 100%; }
+
+.gallery-carousel-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.carousel-arrow {
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    user-select: none;
+}
+
+.carousel-arrow:hover { background: rgba(255,255,255,0.25); }
+.carousel-arrow:disabled { opacity: 0.3; cursor: default; }
+
+.carousel-track-wrapper { flex: 1; overflow: hidden; }
+
+.carousel-track {
+    display: flex;
+    gap: 10px;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.carousel-track .tile {
+    flex: 0 0 calc(25% - 8px);
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.carousel-track .tile img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    aspect-ratio: unset;
+}
+
+.carousel-track .tile .meta {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    padding: 8px;
+}
+
+.carousel-track .tile .meta h4 {
+    margin: 0;
+    font-size: 11px;
+    color: #fff;
+}
+
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: -8px;
+    margin-bottom: 12px;
+}
+
+.carousel-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.carousel-dot.active { background: rgba(255,255,255,0.8); }
