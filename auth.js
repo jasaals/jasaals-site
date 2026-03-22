@@ -1,8 +1,9 @@
 // auth.js — Clerk-based auth for JASAALS
-// Uses Clerk's vanilla JS SDK (loaded via CDN) for email OTP authentication.
+// Uses Clerk Frontend API directly via fetch (no SDK dependency).
 // The publishable key is safe to expose in frontend code.
 
 export const CLERK_PUBLISHABLE_KEY = 'pk_live_Y2xlcmsuamFzYWFscy5jb20k';
+export const CLERK_FRONTEND_API = 'https://clerk.jasaals.com';
 
 // Emails allowed to access the site (enforced client-side as a UX gate)
 export const ALLOWED_EMAILS = [
@@ -10,57 +11,81 @@ export const ALLOWED_EMAILS = [
   'annaleahspears@proton.me',
 ];
 
-/**
- * Load the Clerk SDK and return the Clerk instance.
- * Caches the instance on window so it's only initialised once.
- */
-export async function getClerk() {
-  if (window.__clerk_instance) return window.__clerk_instance;
+// --- Session helpers ---
 
-  // Load Clerk's browser SDK from CDN — pinned to v5 for stability
-  if (!window.Clerk) {
-    await new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js';
-      script.async = true;
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
+function getStoredSession() {
+  try { return JSON.parse(sessionStorage.getItem('__jasaals_session') || 'null'); }
+  catch { return null; }
+}
+
+function storeSession(data) {
+  sessionStorage.setItem('__jasaals_session', JSON.stringify(data));
+}
+
+function clearSession() {
+  sessionStorage.removeItem('__jasaals_session');
+}
+
+// Verify the stored session is still valid by calling Clerk's /v1/client endpoint
+async function verifySession(clientToken) {
+  try {
+    const res = await fetch(`${CLERK_FRONTEND_API}/v1/client`, {
+      headers: {
+        'Authorization': `Bearer ${clientToken}`,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
     });
+    if (!res.ok) return false;
+    const data = await res.json();
+    // Check if there's at least one active session
+    const activeSessions = data?.response?.sessions?.filter(s => s.status === 'active');
+    return activeSessions && activeSessions.length > 0;
+  } catch {
+    return false;
   }
-
-  const clerk = new window.Clerk(CLERK_PUBLISHABLE_KEY);
-  await clerk.load();
-  window.__clerk_instance = clerk;
-  return clerk;
 }
 
 /**
  * Call this at the top of every protected page.
- * Redirects to login.html if the user has no active Clerk session.
- * If Clerk fails to load for any reason, redirects to login as a safe fallback.
+ * Redirects to login.html if the user has no valid session.
  */
 export async function requireAuth() {
   try {
-    const clerk = await getClerk();
-    if (!clerk.user) {
-      const destination = encodeURIComponent(window.location.href);
-      window.location.replace('./login.html?next=' + destination);
+    const session = getStoredSession();
+    if (!session?.token) {
+      redirect();
+      return;
     }
-  } catch (err) {
-    // If auth check fails for any reason, send to login (fail-safe)
-    console.error('Auth check failed, redirecting to login:', err);
-    window.location.replace('./login.html');
+    const valid = await verifySession(session.token);
+    if (!valid) {
+      clearSession();
+      redirect();
+    }
+  } catch {
+    redirect();
   }
+}
+
+function redirect() {
+  const destination = encodeURIComponent(window.location.href);
+  window.location.replace('./login.html?next=' + destination);
 }
 
 /**
  * Sign out and redirect to login.
  */
 export async function logout() {
-  try {
-    const clerk = await getClerk();
-    await clerk.signOut();
-  } catch (e) {}
+  const session = getStoredSession();
+  if (session?.token && session?.sessionId) {
+    try {
+      await fetch(`${CLERK_FRONTEND_API}/v1/client/sessions/${session.sessionId}/revoke`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.token}` },
+        credentials: 'include',
+      });
+    } catch {}
+  }
+  clearSession();
   window.location.replace('./login.html');
 }
