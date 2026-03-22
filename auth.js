@@ -17,13 +17,11 @@ export const ALLOWED_EMAILS = [
 export async function getClerk() {
   if (window.__clerk_instance) return window.__clerk_instance;
 
-  // Load Clerk's browser SDK from CDN if not already loaded
+  // Load Clerk's browser SDK from CDN — pinned to v5 for stability
   if (!window.Clerk) {
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = `https://${CLERK_PUBLISHABLE_KEY.replace('pk_test_', '').replace('pk_live_', '')}.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
-      // Simpler: use the standard CDN path
-      script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
+      script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js';
       script.async = true;
       script.onload = resolve;
       script.onerror = reject;
@@ -40,12 +38,19 @@ export async function getClerk() {
 /**
  * Call this at the top of every protected page.
  * Redirects to login.html if the user has no active Clerk session.
+ * If Clerk fails to load for any reason, redirects to login as a safe fallback.
  */
 export async function requireAuth() {
-  const clerk = await getClerk();
-  if (!clerk.user) {
-    const destination = encodeURIComponent(window.location.href);
-    window.location.replace('./login.html?next=' + destination);
+  try {
+    const clerk = await getClerk();
+    if (!clerk.user) {
+      const destination = encodeURIComponent(window.location.href);
+      window.location.replace('./login.html?next=' + destination);
+    }
+  } catch (err) {
+    // If auth check fails for any reason, send to login (fail-safe)
+    console.error('Auth check failed, redirecting to login:', err);
+    window.location.replace('./login.html');
   }
 }
 
@@ -53,7 +58,9 @@ export async function requireAuth() {
  * Sign out and redirect to login.
  */
 export async function logout() {
-  const clerk = await getClerk();
-  await clerk.signOut();
+  try {
+    const clerk = await getClerk();
+    await clerk.signOut();
+  } catch (e) {}
   window.location.replace('./login.html');
 }
