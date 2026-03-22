@@ -1,529 +1,328 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JASAALS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg-deep: #080c12;
-      --bg-mid: #0d1219;
-      --card: #111720;
-      --border: #1e2a38;
-      --border-hover: #2e4058;
-      --text: #e8edf3;
-      --muted: #7a8a9a;
-      --accent: #7dd3fc;
-      --accent2: #c084fc;
-      --error: #f87171;
-      --success: #6ee7b7;
-    }
-
-    html, body { height: 100%; }
-
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background-color: var(--bg-deep);
-      background-image:
-        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(125, 211, 252, 0.07), transparent),
-        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(192, 132, 252, 0.06), transparent);
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 2rem 1rem;
-    }
-
-    .login-outer { width: 100%; max-width: 420px; }
-
-    .monogram {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .monogram-ring {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      border: 1.5px solid var(--border-hover);
-      background: linear-gradient(135deg, rgba(125,211,252,0.08), rgba(192,132,252,0.06));
-      margin-bottom: 1rem;
-    }
-
-    .monogram-ring span {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.3rem;
-      font-weight: 600;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .site-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      color: var(--text);
-      line-height: 1;
-      margin-bottom: 0.4rem;
-    }
-
-    .site-subtitle {
-      font-size: 0.8rem;
-      font-weight: 300;
-      color: var(--muted);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-    }
-
-    .login-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 2.25rem 2rem 2rem;
-      box-shadow: 0 0 0 1px rgba(125,211,252,0.03), 0 32px 64px rgba(0,0,0,0.5);
-    }
-
-    .card-heading {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.15rem;
-      font-weight: 400;
-      color: var(--text);
-      text-align: center;
-      margin-bottom: 0.3rem;
-    }
-
-    .card-hint {
-      font-size: 0.8rem;
-      color: var(--muted);
-      text-align: center;
-      margin-bottom: 1.75rem;
-      line-height: 1.5;
-    }
-
-    /* Step panels */
-    .step { display: none; }
-    .step.active { display: block; }
-
-    /* Step 2 back button */
-    .back-btn {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 0.8rem;
-      cursor: pointer;
-      padding: 0;
-      margin-bottom: 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      transition: color 0.2s;
-    }
-    .back-btn:hover { color: var(--accent); }
-
-    .email-display {
-      font-size: 0.85rem;
-      color: var(--accent);
-      text-align: center;
-      margin-bottom: 1.25rem;
-      word-break: break-all;
-    }
-
-    /* OTP input row */
-    .otp-row {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .otp-row input {
-      width: 44px;
-      height: 52px;
-      text-align: center;
-      font-size: 1.4rem;
-      font-weight: 600;
-      background: var(--bg-mid);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      caret-color: var(--accent);
-    }
-
-    .otp-row input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(125,211,252,0.1);
-    }
-
-    .otp-row input.filled { border-color: var(--border-hover); }
-    .otp-row input.input-error { border-color: var(--error); box-shadow: 0 0 0 3px rgba(248,113,113,0.1); }
-
-    .field { margin-bottom: 1rem; }
-
-    .field label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 500;
-      color: var(--muted);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 0.45rem;
-    }
-
-    .field input {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      background: var(--bg-mid);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      -webkit-appearance: none;
-    }
-
-    .field input::placeholder { color: #3a4a5a; }
-
-    .field input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(125,211,252,0.1);
-    }
-
-    .field input.input-error {
-      border-color: var(--error);
-      box-shadow: 0 0 0 3px rgba(248,113,113,0.1);
-    }
-
-    .error-msg {
-      font-size: 0.8rem;
-      color: var(--error);
-      min-height: 1.1em;
-      margin-top: 0.5rem;
-      margin-bottom: 0.25rem;
-      text-align: center;
-    }
-
-    .resend-row {
-      text-align: center;
-      margin-top: 0.75rem;
-    }
-
-    .resend-btn {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 0.8rem;
-      cursor: pointer;
-      padding: 0;
-      transition: color 0.2s;
-    }
-
-    .resend-btn:hover:not(:disabled) { color: var(--accent); }
-    .resend-btn:disabled { opacity: 0.4; cursor: default; }
-
-    .submit-btn {
-      width: 100%;
-      margin-top: 0.75rem;
-      padding: 0.85rem 1rem;
-      background: linear-gradient(135deg, rgba(125,211,252,0.15), rgba(192,132,252,0.12));
-      border: 1px solid rgba(125,211,252,0.25);
-      border-radius: 10px;
-      color: var(--accent);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 500;
-      letter-spacing: 0.04em;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
-    }
-
-    .submit-btn:hover {
-      background: linear-gradient(135deg, rgba(125,211,252,0.22), rgba(192,132,252,0.18));
-      border-color: rgba(125,211,252,0.45);
-      color: #fff;
-    }
-
-    .submit-btn:active { transform: scale(0.98); }
-    .submit-btn:disabled { opacity: 0.5; cursor: default; }
-
-    .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
-
-    .footer-note {
-      font-size: 0.75rem;
-      color: var(--muted);
-      text-align: center;
-      line-height: 1.5;
-    }
-
-    /* Loading spinner on button */
-    .btn-loading { opacity: 0.7; cursor: default; }
-  </style>
-</head>
-<body>
-  <div class="login-outer">
-
-    <div class="monogram">
-      <div class="monogram-ring"><span>J&amp;A</span></div>
-      <div class="site-title">JASAALS</div>
-      <div class="site-subtitle">Jeffrey &amp; Anna Leah</div>
-    </div>
-
-    <div class="login-card">
-
-      <!-- Step 1: Email -->
-      <div class="step active" id="step-email">
-        <p class="card-heading">Welcome back</p>
-        <p class="card-hint">Enter your email and we'll send you a one-time code.</p>
-
-        <form id="email-form" novalidate>
-          <div class="field">
-            <label for="email">Email address</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="you@example.com"
-              autocomplete="email"
-              autofocus
-              required
-            />
-          </div>
-          <p class="error-msg" id="email-error" role="alert" aria-live="polite"></p>
-          <button type="submit" class="submit-btn" id="email-btn">Send code</button>
-        </form>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JASAALS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --bg-deep: #080c12;
+        --bg-mid: #0d1219;
+        --card: #111720;
+        --border: #1e2a38;
+        --border-hover: #2e4058;
+        --text: #e8edf3;
+        --muted: #7a8a9a;
+        --accent: #7dd3fc;
+        --accent2: #c084fc;
+        --error: #f87171;
+        --success: #6ee7b7;
+      }
+      html, body { height: 100%; }
+      body { font-family: 'Inter', system-ui, sans-serif; background-color: var(--bg-deep); background-image: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(125,211,252,0.07), transparent), radial-gradient(ellipse 60% 40% at 80% 110%, rgba(192,132,252,0.06), transparent); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem 1rem; }
+      .login-outer { width: 100%; max-width: 420px; }
+      .monogram { text-align: center; margin-bottom: 2rem; }
+      .monogram-ring { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; border: 1.5px solid var(--border-hover); background: linear-gradient(135deg, rgba(125,211,252,0.08), rgba(192,132,252,0.06)); margin-bottom: 1rem; }
+      .monogram-ring span { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 600; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+      .site-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 600; letter-spacing: 0.12em; color: var(--text); line-height: 1; margin-bottom: 0.4rem; }
+      .site-subtitle { font-size: 0.8rem; font-weight: 300; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+      .login-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 2.25rem 2rem 2rem; box-shadow: 0 0 0 1px rgba(125,211,252,0.03), 0 32px 64px rgba(0,0,0,0.5); }
+      .card-heading { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 400; color: var(--text); text-align: center; margin-bottom: 0.3rem; }
+      .card-hint { font-size: 0.8rem; color: var(--muted); text-align: center; margin-bottom: 1.75rem; line-height: 1.5; }
+      .step { display: none; }
+      .step.active { display: block; }
+      .back-btn { background: none; border: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; padding: 0; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.35rem; transition: color 0.2s; }
+      .back-btn:hover { color: var(--accent); }
+      .email-display { font-size: 0.85rem; color: var(--accent); text-align: center; margin-bottom: 1.25rem; word-break: break-all; }
+      .otp-row { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.5rem; }
+      .otp-row input { width: 44px; height: 52px; text-align: center; font-size: 1.4rem; font-weight: 600; background: var(--bg-mid); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none; transition: border-color 0.2s, box-shadow 0.2s; caret-color: var(--accent); }
+      .otp-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(125,211,252,0.1); }
+      .otp-row input.filled { border-color: var(--border-hover); }
+      .otp-row input.input-error { border-color: var(--error); box-shadow: 0 0 0 3px rgba(248,113,113,0.1); }
+      .field { margin-bottom: 1rem; }
+      .field label { display: block; font-size: 0.78rem; font-weight: 500; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.45rem; }
+      .field input { width: 100%; padding: 0.75rem 1rem; background: var(--bg-mid); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; }
+      .field input::placeholder { color: #3a4a5a; }
+      .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(125,211,252,0.1); }
+      .field input.input-error { border-color: var(--error); box-shadow: 0 0 0 3px rgba(248,113,113,0.1); }
+      .error-msg { font-size: 0.8rem; color: var(--error); min-height: 1.1em; margin-top: 0.5rem; margin-bottom: 0.25rem; text-align: center; }
+      .resend-row { text-align: center; margin-top: 0.75rem; }
+      .resend-btn { background: none; border: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; padding: 0; transition: color 0.2s; }
+      .resend-btn:hover:not(:disabled) { color: var(--accent); }
+      .resend-btn:disabled { opacity: 0.4; cursor: default; }
+      .submit-btn { width: 100%; margin-top: 0.75rem; padding: 0.85rem 1rem; background: linear-gradient(135deg, rgba(125,211,252,0.15), rgba(192,132,252,0.12)); border: 1px solid rgba(125,211,252,0.25); border-radius: 10px; color: var(--accent); font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 500; letter-spacing: 0.04em; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s; }
+      .submit-btn:hover { background: linear-gradient(135deg, rgba(125,211,252,0.22), rgba(192,132,252,0.18)); border-color: rgba(125,211,252,0.45); color: #fff; }
+      .submit-btn:active { transform: scale(0.98); }
+      .submit-btn:disabled { opacity: 0.5; cursor: default; }
+      .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+      .footer-note { font-size: 0.75rem; color: var(--muted); text-align: center; line-height: 1.5; }
+    </style>
+  </head>
+  <body>
+    <div class="login-outer">
+      <div class="monogram">
+        <div class="monogram-ring"><span>J&amp;A</span></div>
+        <div class="site-title">JASAALS</div>
+        <div class="site-subtitle">Jeffrey &amp; Anna Leah</div>
       </div>
-
-      <!-- Step 2: OTP code -->
-      <div class="step" id="step-otp">
-        <button class="back-btn" id="back-btn" type="button">&#8592; Back</button>
-        <p class="card-heading">Check your email</p>
-        <p class="card-hint">We sent a 6-digit code to</p>
-        <p class="email-display" id="email-display"></p>
-
-        <form id="otp-form" novalidate>
-          <div class="otp-row" id="otp-row">
-            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" autocomplete="one-time-code" />
-            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
-            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
-            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
-            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
-            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
-          </div>
-          <p class="error-msg" id="otp-error" role="alert" aria-live="polite"></p>
-          <button type="submit" class="submit-btn" id="otp-btn">Verify code</button>
-        </form>
-
-        <div class="resend-row">
-          <button class="resend-btn" id="resend-btn" type="button">Resend code</button>
+      <div class="login-card">
+        <!-- Step 1: Email -->
+        <div class="step active" id="step-email">
+          <p class="card-heading">Welcome back</p>
+          <p class="card-hint">Enter your email and we'll send you a one-time code.</p>
+          <form id="email-form" novalidate>
+            <div class="field">
+              <label for="email">Email address</label>
+              <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" autofocus required />
+            </div>
+            <p class="error-msg" id="email-error" role="alert" aria-live="polite"></p>
+            <button type="submit" class="submit-btn" id="email-btn">Send code</button>
+          </form>
         </div>
+        <!-- Step 2: OTP code -->
+        <div class="step" id="step-otp">
+          <button class="back-btn" id="back-btn" type="button">&#8592; Back</button>
+          <p class="card-heading">Check your email</p>
+          <p class="card-hint">We sent a 6-digit code to</p>
+          <p class="email-display" id="email-display"></p>
+          <form id="otp-form" novalidate>
+            <div class="otp-row" id="otp-row">
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" autocomplete="one-time-code" />
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
+            </div>
+            <p class="error-msg" id="otp-error" role="alert" aria-live="polite"></p>
+            <button type="submit" class="submit-btn" id="otp-btn">Verify code</button>
+          </form>
+          <div class="resend-row">
+            <button class="resend-btn" id="resend-btn" type="button">Resend code</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <p class="footer-note">This is a private space for Jeffrey &amp; Anna Leah.<br>If you need access, reach out directly.</p>
       </div>
-
-      <div class="divider"></div>
-      <p class="footer-note">This is a private space for Jeffrey &amp; Anna Leah.<br>If you need access, reach out directly.</p>
-
     </div>
-  </div>
 
-  <script type="module">
-    import { getClerk, ALLOWED_EMAILS } from './auth.js';
+    <script type="module">
+      import { CLERK_PUBLISHABLE_KEY, CLERK_FRONTEND_API, ALLOWED_EMAILS } from './auth.js';
 
-    const params = new URLSearchParams(window.location.search);
-    const nextUrl = params.get('next');
+      const params = new URLSearchParams(window.location.search);
+      const nextUrl = params.get('next');
 
-    // If already signed in, go straight through
-    const clerk = await getClerk();
-    if (clerk.user) {
-      window.location.replace(nextUrl ? decodeURIComponent(nextUrl) : './index.html');
-    }
+      // If already signed in (valid session in sessionStorage), go straight through
+      const stored = (() => { try { return JSON.parse(sessionStorage.getItem('__jasaals_session') || 'null'); } catch { return null; } })();
+      if (stored?.token) {
+        // Quick verify
+        fetch(`${CLERK_FRONTEND_API}/v1/client`, {
+          headers: { 'Authorization': `Bearer ${stored.token}` },
+          credentials: 'include',
+        }).then(r => r.ok ? r.json() : null).then(data => {
+          const active = data?.response?.sessions?.some(s => s.status === 'active');
+          if (active) window.location.replace(nextUrl ? decodeURIComponent(nextUrl) : './index.html');
+        }).catch(() => {});
+      }
 
-    // --- DOM refs ---
-    const stepEmail = document.getElementById('step-email');
-    const stepOtp   = document.getElementById('step-otp');
-    const emailInput = document.getElementById('email');
-    const emailError = document.getElementById('email-error');
-    const emailBtn   = document.getElementById('email-btn');
-    const emailForm  = document.getElementById('email-form');
-    const emailDisplay = document.getElementById('email-display');
-    const otpDigits  = Array.from(document.querySelectorAll('.otp-digit'));
-    const otpError   = document.getElementById('otp-error');
-    const otpBtn     = document.getElementById('otp-btn');
-    const otpForm    = document.getElementById('otp-form');
-    const backBtn    = document.getElementById('back-btn');
-    const resendBtn  = document.getElementById('resend-btn');
+      // --- Clerk API helpers ---
+      async function clerkPost(path, body, token) {
+        const headers = {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Clerk-Publishable-Key': CLERK_PUBLISHABLE_KEY,
+        };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    let signInAttempt = null;
+        const res = await fetch(`${CLERK_FRONTEND_API}${path}`, {
+          method: 'POST',
+          headers,
+          body: new URLSearchParams(body).toString(),
+          credentials: 'include',
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const msg = data?.errors?.[0]?.long_message || data?.errors?.[0]?.message || 'Something went wrong.';
+          throw new Error(msg);
+        }
+        return data;
+      }
 
-    // --- OTP digit keyboard handling ---
-    otpDigits.forEach((input, i) => {
-      input.addEventListener('input', () => {
-        input.classList.toggle('filled', input.value.length > 0);
+      // --- DOM refs ---
+      const stepEmail = document.getElementById('step-email');
+      const stepOtp   = document.getElementById('step-otp');
+      const emailInput  = document.getElementById('email');
+      const emailError  = document.getElementById('email-error');
+      const emailBtn    = document.getElementById('email-btn');
+      const emailForm   = document.getElementById('email-form');
+      const emailDisplay = document.getElementById('email-display');
+      const otpDigits  = Array.from(document.querySelectorAll('.otp-digit'));
+      const otpError   = document.getElementById('otp-error');
+      const otpBtn     = document.getElementById('otp-btn');
+      const otpForm    = document.getElementById('otp-form');
+      const backBtn    = document.getElementById('back-btn');
+      const resendBtn  = document.getElementById('resend-btn');
+
+      let signInId = null;
+      let emailAddressId = null;
+      let clientToken = null;
+
+      // --- OTP digit keyboard handling ---
+      otpDigits.forEach((input, i) => {
+        input.addEventListener('input', () => {
+          input.classList.toggle('filled', input.value.length > 0);
+          otpError.textContent = '';
+          otpDigits.forEach(d => d.classList.remove('input-error'));
+          if (input.value && i < otpDigits.length - 1) otpDigits[i + 1].focus();
+          if (otpDigits.every(d => d.value.length === 1)) otpForm.requestSubmit();
+        });
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !input.value && i > 0) otpDigits[i - 1].focus();
+        });
+        input.addEventListener('paste', (e) => {
+          const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+          if (text.length > 0) {
+            e.preventDefault();
+            text.split('').forEach((ch, idx) => { if (otpDigits[idx]) otpDigits[idx].value = ch; });
+            const nextEmpty = otpDigits.find(d => !d.value);
+            (nextEmpty || otpDigits[otpDigits.length - 1]).focus();
+            if (text.length === 6) otpForm.requestSubmit();
+          }
+        });
+      });
+
+      // --- Step 1: Send email code ---
+      emailForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        emailError.textContent = '';
+        emailInput.classList.remove('input-error');
+        const email = emailInput.value.trim().toLowerCase();
+
+        if (!ALLOWED_EMAILS.includes(email)) {
+          emailError.textContent = 'That email is not authorised to access this site.';
+          emailInput.classList.add('input-error');
+          return;
+        }
+
+        emailBtn.textContent = 'Sending…';
+        emailBtn.disabled = true;
+
+        try {
+          // Step 1: Create sign-in attempt
+          const createData = await clerkPost('/v1/client/sign_ins', { identifier: email });
+          signInId = createData.response.id;
+          clientToken = createData.client?.last_active_session_id || null;
+
+          // Find the email_code factor
+          const factor = createData.response.supported_first_factors?.find(f => f.strategy === 'email_code');
+          if (!factor) throw new Error('Email code sign-in is not available for this account.');
+          emailAddressId = factor.email_address_id;
+
+          // Step 2: Prepare (sends the OTP email)
+          await clerkPost(`/v1/client/sign_ins/${signInId}/prepare_first_factor`, {
+            strategy: 'email_code',
+            email_address_id: emailAddressId,
+          });
+
+          // Show OTP step
+          emailDisplay.textContent = email;
+          stepEmail.classList.remove('active');
+          stepOtp.classList.add('active');
+          otpDigits[0].focus();
+        } catch (err) {
+          emailError.textContent = err.message || 'Something went wrong. Please try again.';
+          emailInput.classList.add('input-error');
+        } finally {
+          emailBtn.textContent = 'Send code';
+          emailBtn.disabled = false;
+        }
+      });
+
+      // --- Step 2: Verify OTP ---
+      otpForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
         otpError.textContent = '';
         otpDigits.forEach(d => d.classList.remove('input-error'));
-        if (input.value && i < otpDigits.length - 1) {
-          otpDigits[i + 1].focus();
+
+        const code = otpDigits.map(d => d.value).join('');
+        if (code.length < 6) {
+          otpError.textContent = 'Please enter the full 6-digit code.';
+          otpDigits.forEach(d => d.classList.add('input-error'));
+          return;
         }
-        // Auto-submit when all filled
-        if (otpDigits.every(d => d.value.length === 1)) {
-          otpForm.requestSubmit();
-        }
-      });
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !input.value && i > 0) {
-          otpDigits[i - 1].focus();
-        }
-      });
-      // Handle paste on first digit
-      input.addEventListener('paste', (e) => {
-        const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-        if (text.length > 0) {
-          e.preventDefault();
-          text.split('').forEach((ch, idx) => {
-            if (otpDigits[idx]) otpDigits[idx].value = ch;
+
+        otpBtn.textContent = 'Verifying…';
+        otpBtn.disabled = true;
+
+        try {
+          const result = await clerkPost(`/v1/client/sign_ins/${signInId}/attempt_first_factor`, {
+            strategy: 'email_code',
+            code,
           });
-          const nextEmpty = otpDigits.find(d => !d.value);
-          (nextEmpty || otpDigits[otpDigits.length - 1]).focus();
-          if (text.length === 6) otpForm.requestSubmit();
+
+          if (result.response?.status === 'complete') {
+            // Store the session token
+            const session = result.client?.sessions?.find(s => s.status === 'active');
+            const token = result.client?.last_active_token?.jwt || session?.last_active_token?.jwt;
+            const sessionId = session?.id || result.response?.created_session_id;
+
+            sessionStorage.setItem('__jasaals_session', JSON.stringify({
+              token: token || 'clerk-session-active',
+              sessionId,
+              email: emailInput.value.trim().toLowerCase(),
+              ts: Date.now(),
+            }));
+
+            otpBtn.textContent = 'Welcome ♥';
+            setTimeout(() => {
+              window.location.replace(nextUrl ? decodeURIComponent(nextUrl) : './index.html');
+            }, 600);
+          } else {
+            throw new Error('Verification incomplete. Please try again.');
+          }
+        } catch (err) {
+          otpError.textContent = err.message || 'Incorrect code. Please try again.';
+          otpDigits.forEach(d => d.classList.add('input-error'));
+          otpDigits[0].focus();
+          otpBtn.textContent = 'Verify code';
+          otpBtn.disabled = false;
         }
       });
-    });
 
-    // --- Step 1: Send email code ---
-    emailForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      emailError.textContent = '';
-      emailInput.classList.remove('input-error');
-
-      const email = emailInput.value.trim().toLowerCase();
-
-      if (!ALLOWED_EMAILS.includes(email)) {
-        emailError.textContent = 'That email is not authorised to access this site.';
-        emailInput.classList.add('input-error');
-        return;
-      }
-
-      emailBtn.textContent = 'Sending…';
-      emailBtn.disabled = true;
-
-      try {
-        signInAttempt = await clerk.client.signIn.create({
-          identifier: email,
-        });
-
-        const emailFactor = signInAttempt.supportedFirstFactors.find(
-          f => f.strategy === 'email_code'
-        );
-
-        if (!emailFactor) throw new Error('Email OTP not available for this account.');
-
-        await signInAttempt.prepareFirstFactor({
-          strategy: 'email_code',
-          emailAddressId: emailFactor.emailAddressId,
-        });
-
-        // Show OTP step
-        emailDisplay.textContent = email;
-        stepEmail.classList.remove('active');
-        stepOtp.classList.add('active');
-        otpDigits[0].focus();
-
-      } catch (err) {
-        emailError.textContent = err.errors?.[0]?.message || err.message || 'Something went wrong. Please try again.';
-        emailInput.classList.add('input-error');
-      } finally {
-        emailBtn.textContent = 'Send code';
-        emailBtn.disabled = false;
-      }
-    });
-
-    // --- Step 2: Verify OTP ---
-    otpForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      otpError.textContent = '';
-      otpDigits.forEach(d => d.classList.remove('input-error'));
-
-      const code = otpDigits.map(d => d.value).join('');
-      if (code.length < 6) {
-        otpError.textContent = 'Please enter the full 6-digit code.';
-        otpDigits.forEach(d => d.classList.add('input-error'));
-        return;
-      }
-
-      otpBtn.textContent = 'Verifying…';
-      otpBtn.disabled = true;
-
-      try {
-        const result = await signInAttempt.attemptFirstFactor({
-          strategy: 'email_code',
-          code,
-        });
-
-        if (result.status === 'complete') {
-          await clerk.setActive({ session: result.createdSessionId });
-          otpBtn.textContent = 'Welcome ♥';
-          setTimeout(() => {
-            window.location.replace(nextUrl ? decodeURIComponent(nextUrl) : './index.html');
-          }, 600);
-        } else {
-          throw new Error('Verification incomplete. Please try again.');
-        }
-      } catch (err) {
-        otpError.textContent = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Incorrect code. Please try again.';
-        otpDigits.forEach(d => d.classList.add('input-error'));
-        otpDigits[0].focus();
-        otpBtn.textContent = 'Verify code';
-        otpBtn.disabled = false;
-      }
-    });
-
-    // --- Back button ---
-    backBtn.addEventListener('click', () => {
-      stepOtp.classList.remove('active');
-      stepEmail.classList.add('active');
-      otpDigits.forEach(d => { d.value = ''; d.classList.remove('filled', 'input-error'); });
-      otpError.textContent = '';
-      signInAttempt = null;
-      emailInput.focus();
-    });
-
-    // --- Resend code ---
-    resendBtn.addEventListener('click', async () => {
-      resendBtn.disabled = true;
-      resendBtn.textContent = 'Sending…';
-      try {
-        const emailFactor = signInAttempt.supportedFirstFactors.find(f => f.strategy === 'email_code');
-        await signInAttempt.prepareFirstFactor({
-          strategy: 'email_code',
-          emailAddressId: emailFactor.emailAddressId,
-        });
+      // --- Back button ---
+      backBtn.addEventListener('click', () => {
+        stepOtp.classList.remove('active');
+        stepEmail.classList.add('active');
         otpDigits.forEach(d => { d.value = ''; d.classList.remove('filled', 'input-error'); });
         otpError.textContent = '';
-        otpDigits[0].focus();
-        resendBtn.textContent = 'Code resent!';
-        setTimeout(() => {
+        signInId = null;
+        emailAddressId = null;
+        emailInput.focus();
+      });
+
+      // --- Resend code ---
+      resendBtn.addEventListener('click', async () => {
+        resendBtn.disabled = true;
+        resendBtn.textContent = 'Sending…';
+        try {
+          await clerkPost(`/v1/client/sign_ins/${signInId}/prepare_first_factor`, {
+            strategy: 'email_code',
+            email_address_id: emailAddressId,
+          });
+          otpDigits.forEach(d => { d.value = ''; d.classList.remove('filled', 'input-error'); });
+          otpError.textContent = '';
+          otpDigits[0].focus();
+          resendBtn.textContent = 'Code resent!';
+          setTimeout(() => { resendBtn.textContent = 'Resend code'; resendBtn.disabled = false; }, 4000);
+        } catch (err) {
           resendBtn.textContent = 'Resend code';
           resendBtn.disabled = false;
-        }, 4000);
-      } catch (err) {
-        resendBtn.textContent = 'Resend code';
-        resendBtn.disabled = false;
-        otpError.textContent = 'Could not resend. Please go back and try again.';
-      }
-    });
-  </script>
-</body>
+          otpError.textContent = 'Could not resend. Please go back and try again.';
+        }
+      });
+    </script>
+  </body>
 </html>
