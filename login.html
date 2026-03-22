@@ -107,12 +107,6 @@
       const params = new URLSearchParams(window.location.search);
       const nextUrl = params.get('next');
 
-      // If already signed in, go straight through
-      const clerk = await getClerk();
-      if (clerk.user) {
-        window.location.replace(nextUrl ? decodeURIComponent(nextUrl) : './index.html');
-      }
-
       // --- DOM refs ---
       const stepEmail   = document.getElementById('step-email');
       const stepOtp     = document.getElementById('step-otp');
@@ -129,6 +123,16 @@
       const resendBtn   = document.getElementById('resend-btn');
 
       let signInAttempt = null;
+
+      // Start loading Clerk in the background immediately — don't block the UI.
+      // Store the promise so the submit handler can await it if needed.
+      const clerkPromise = getClerk().then(clerk => {
+        // If already signed in when Clerk loads, redirect now
+        if (clerk.user) {
+          window.location.replace(nextUrl ? decodeURIComponent(nextUrl) : './index.html');
+        }
+        return clerk;
+      });
 
       // --- OTP digit keyboard handling ---
       otpDigits.forEach((input, i) => {
@@ -171,6 +175,9 @@
         emailBtn.disabled = true;
 
         try {
+          // Wait for Clerk to be ready (it started loading in the background; usually already done by now)
+          const clerk = await clerkPromise;
+
           signInAttempt = await clerk.client.signIn.create({ identifier: email });
 
           const emailFactor = signInAttempt.supportedFirstFactors.find(
@@ -183,6 +190,7 @@
             emailAddressId: emailFactor.emailAddressId,
           });
 
+          // Advance to OTP step
           emailDisplay.textContent = email;
           stepEmail.classList.remove('active');
           stepOtp.classList.add('active');
@@ -190,7 +198,6 @@
         } catch (err) {
           emailError.textContent = err.errors?.[0]?.message || err.message || 'Something went wrong. Please try again.';
           emailInput.classList.add('input-error');
-        } finally {
           emailBtn.textContent = 'Send code';
           emailBtn.disabled = false;
         }
@@ -213,6 +220,7 @@
         otpBtn.disabled = true;
 
         try {
+          const clerk = await clerkPromise;
           const result = await signInAttempt.attemptFirstFactor({
             strategy: 'email_code',
             code,
