@@ -6,62 +6,16 @@
     <title>Gallery — JASAALS</title>
     <link rel="stylesheet" href="./styles.css" />
     <style>
-      .polaroid-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 2rem 1.5rem;
-        padding: 0.5rem 0 2rem;
-      }
-      .polaroid {
-        background: #fff;
-        padding: 10px 10px 0 10px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.3);
-        border-radius: 2px;
-        display: flex;
-        flex-direction: column;
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
+      body { visibility: hidden; }
+      .polaroid-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 2rem 1.5rem; padding: 0.5rem 0 2rem; }
+      .polaroid { background: #fff; padding: 10px 10px 0 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.3); border-radius: 2px; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
       .polaroid:hover { transform: scale(1.03) rotate(-1deg); box-shadow: 0 8px 28px rgba(0,0,0,0.55); }
       .polaroid:nth-child(even):hover { transform: scale(1.03) rotate(1deg); }
-      .polaroid-date {
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 11px;
-        color: #555;
-        text-align: center;
-        padding: 6px 2px 8px;
-        letter-spacing: 0.04em;
-        margin: 0;
-      }
-      .polaroid-photo {
-        width: 100%;
-        aspect-ratio: 1 / 1;
-        object-fit: cover;
-        display: block;
-        background: #ddd;
-      }
-      .polaroid-caption {
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 12px;
-        color: #333;
-        text-align: center;
-        padding: 10px 4px 12px;
-        min-height: 38px;
-        line-height: 1.4;
-        font-style: italic;
-        margin: 0;
-      }
+      .polaroid-date { font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #555; text-align: center; padding: 6px 2px 8px; letter-spacing: 0.04em; margin: 0; }
+      .polaroid-photo { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; background: #ddd; }
+      .polaroid-caption { font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #333; text-align: center; padding: 10px 4px 12px; min-height: 38px; line-height: 1.4; font-style: italic; margin: 0; }
       .gallery-count { color: var(--muted); font-size: 0.88rem; margin-bottom: 1.2rem; }
-      .back-link {
-        color: var(--accent);
-        text-decoration: none;
-        font-size: 0.9rem;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        padding: 0.35rem 0.75rem;
-        display: inline-block;
-        margin-bottom: 1rem;
-        transition: border-color 0.2s;
-      }
+      .back-link { color: var(--accent); text-decoration: none; font-size: 0.9rem; border: 1px solid var(--border); border-radius: 999px; padding: 0.35rem 0.75rem; display: inline-block; margin-bottom: 1rem; transition: border-color 0.2s; }
       .back-link:hover { border-color: var(--accent); }
       #photo-grid-loading { color: var(--muted); padding: 2rem 0; text-align: center; }
     </style>
@@ -81,7 +35,6 @@
         </nav>
       </div>
     </header>
-
     <main class="wrap">
       <section class="card">
         <a href="./index.html" class="back-link">← Back to Home</a>
@@ -91,12 +44,14 @@
         <div id="polaroid-grid" class="polaroid-grid" style="display:none;"></div>
       </section>
     </main>
-
     <footer class="wrap footer">
       <p>Private for now. Public pages can be split out later for wedding photos/blog.</p>
     </footer>
-
-      <script type="module">import { requireAuth } from './auth.js'; await requireAuth();</script>
+    <script type="module">
+      import { requireAuth } from './auth.js';
+      await requireAuth();
+      document.body.style.visibility = 'visible';
+    </script>
     <script type="module">
       const fetchJson = async (path) => {
         const res = await fetch(path);
