@@ -21,11 +21,10 @@
       --accent: #7dd3fc;
       --accent2: #c084fc;
       --error: #f87171;
+      --success: #6ee7b7;
     }
 
-    html, body {
-      height: 100%;
-    }
+    html, body { height: 100%; }
 
     body {
       font-family: 'Inter', system-ui, sans-serif;
@@ -41,10 +40,7 @@
       padding: 2rem 1rem;
     }
 
-    .login-outer {
-      width: 100%;
-      max-width: 420px;
-    }
+    .login-outer { width: 100%; max-width: 420px; }
 
     .monogram {
       text-align: center;
@@ -71,7 +67,6 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      letter-spacing: 0.05em;
     }
 
     .site-title {
@@ -97,10 +92,7 @@
       border: 1px solid var(--border);
       border-radius: 20px;
       padding: 2.25rem 2rem 2rem;
-      box-shadow:
-        0 0 0 1px rgba(125,211,252,0.03),
-        0 32px 64px rgba(0,0,0,0.5),
-        0 8px 24px rgba(0,0,0,0.3);
+      box-shadow: 0 0 0 1px rgba(125,211,252,0.03), 0 32px 64px rgba(0,0,0,0.5);
     }
 
     .card-heading {
@@ -120,9 +112,66 @@
       line-height: 1.5;
     }
 
-    .field {
-      margin-bottom: 1rem;
+    /* Step panels */
+    .step { display: none; }
+    .step.active { display: block; }
+
+    /* Step 2 back button */
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: color 0.2s;
     }
+    .back-btn:hover { color: var(--accent); }
+
+    .email-display {
+      font-size: 0.85rem;
+      color: var(--accent);
+      text-align: center;
+      margin-bottom: 1.25rem;
+      word-break: break-all;
+    }
+
+    /* OTP input row */
+    .otp-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .otp-row input {
+      width: 44px;
+      height: 52px;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 600;
+      background: var(--bg-mid);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      caret-color: var(--accent);
+    }
+
+    .otp-row input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(125,211,252,0.1);
+    }
+
+    .otp-row input.filled { border-color: var(--border-hover); }
+    .otp-row input.input-error { border-color: var(--error); box-shadow: 0 0 0 3px rgba(248,113,113,0.1); }
+
+    .field { margin-bottom: 1rem; }
 
     .field label {
       display: block;
@@ -143,15 +192,12 @@
       color: var(--text);
       font-family: 'Inter', sans-serif;
       font-size: 0.95rem;
-      font-weight: 400;
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s;
       -webkit-appearance: none;
     }
 
-    .field input::placeholder {
-      color: #3a4a5a;
-    }
+    .field input::placeholder { color: #3a4a5a; }
 
     .field input:focus {
       border-color: var(--accent);
@@ -171,6 +217,24 @@
       margin-bottom: 0.25rem;
       text-align: center;
     }
+
+    .resend-row {
+      text-align: center;
+      margin-top: 0.75rem;
+    }
+
+    .resend-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.2s;
+    }
+
+    .resend-btn:hover:not(:disabled) { color: var(--accent); }
+    .resend-btn:disabled { opacity: 0.4; cursor: default; }
 
     .submit-btn {
       width: 100%;
@@ -194,20 +258,10 @@
       color: #fff;
     }
 
-    .submit-btn:active {
-      transform: scale(0.98);
-    }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.5; cursor: default; }
 
-    .submit-btn:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 1.5rem 0;
-    }
+    .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
 
     .footer-note {
       font-size: 0.75rem;
@@ -215,6 +269,9 @@
       text-align: center;
       line-height: 1.5;
     }
+
+    /* Loading spinner on button */
+    .btn-loading { opacity: 0.7; cursor: default; }
   </style>
 </head>
 <body>
@@ -227,99 +284,244 @@
     </div>
 
     <div class="login-card">
-      <p class="card-heading">Welcome back</p>
-      <p class="card-hint">Enter your email and the site password to continue.</p>
 
-      <form id="login-form" autocomplete="off" novalidate>
-        <div class="field">
-          <label for="email">Email address</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            placeholder="you@example.com"
-            autocomplete="email"
-            autofocus
-            required
-          />
+      <!-- Step 1: Email -->
+      <div class="step active" id="step-email">
+        <p class="card-heading">Welcome back</p>
+        <p class="card-hint">Enter your email and we'll send you a one-time code.</p>
+
+        <form id="email-form" novalidate>
+          <div class="field">
+            <label for="email">Email address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              autofocus
+              required
+            />
+          </div>
+          <p class="error-msg" id="email-error" role="alert" aria-live="polite"></p>
+          <button type="submit" class="submit-btn" id="email-btn">Send code</button>
+        </form>
+      </div>
+
+      <!-- Step 2: OTP code -->
+      <div class="step" id="step-otp">
+        <button class="back-btn" id="back-btn" type="button">&#8592; Back</button>
+        <p class="card-heading">Check your email</p>
+        <p class="card-hint">We sent a 6-digit code to</p>
+        <p class="email-display" id="email-display"></p>
+
+        <form id="otp-form" novalidate>
+          <div class="otp-row" id="otp-row">
+            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" autocomplete="one-time-code" />
+            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
+            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
+            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
+            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
+            <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" />
+          </div>
+          <p class="error-msg" id="otp-error" role="alert" aria-live="polite"></p>
+          <button type="submit" class="submit-btn" id="otp-btn">Verify code</button>
+        </form>
+
+        <div class="resend-row">
+          <button class="resend-btn" id="resend-btn" type="button">Resend code</button>
         </div>
-
-        <div class="field">
-          <label for="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            placeholder="Site password"
-            autocomplete="current-password"
-            required
-          />
-        </div>
-
-        <p class="error-msg" id="error-msg" role="alert" aria-live="polite"></p>
-
-        <button type="submit" class="submit-btn" id="submit-btn">Enter our space</button>
-      </form>
+      </div>
 
       <div class="divider"></div>
       <p class="footer-note">This is a private space for Jeffrey &amp; Anna Leah.<br>If you need access, reach out directly.</p>
-    </div>
 
+    </div>
   </div>
 
   <script type="module">
-    import { login } from './auth.js';
+    import { getClerk, ALLOWED_EMAILS } from './auth.js';
 
-    const ALLOWED_EMAILS = [
-      'jeffreyspears@pm.me',
-      'annaleahspears@proton.me'
-    ];
+    const params = new URLSearchParams(window.location.search);
+    const nextUrl = params.get('next');
 
-    // Skip login if already authenticated
-    if (localStorage.getItem('jasaals_auth') === 'true') {
-      const params = new URLSearchParams(window.location.search);
-      const next = params.get('next');
-      window.location.replace(next ? decodeURIComponent(next) : './index.html');
+    // If already signed in, go straight through
+    const clerk = await getClerk();
+    if (clerk.user) {
+      window.location.replace(nextUrl ? decodeURIComponent(nextUrl) : './index.html');
     }
 
-    const form = document.getElementById('login-form');
+    // --- DOM refs ---
+    const stepEmail = document.getElementById('step-email');
+    const stepOtp   = document.getElementById('step-otp');
     const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const errorMsg = document.getElementById('error-msg');
-    const submitBtn = document.getElementById('submit-btn');
+    const emailError = document.getElementById('email-error');
+    const emailBtn   = document.getElementById('email-btn');
+    const emailForm  = document.getElementById('email-form');
+    const emailDisplay = document.getElementById('email-display');
+    const otpDigits  = Array.from(document.querySelectorAll('.otp-digit'));
+    const otpError   = document.getElementById('otp-error');
+    const otpBtn     = document.getElementById('otp-btn');
+    const otpForm    = document.getElementById('otp-form');
+    const backBtn    = document.getElementById('back-btn');
+    const resendBtn  = document.getElementById('resend-btn');
 
-    [emailInput, passwordInput].forEach(el => {
-      el.addEventListener('input', () => {
-        errorMsg.textContent = '';
-        el.classList.remove('input-error');
+    let signInAttempt = null;
+
+    // --- OTP digit keyboard handling ---
+    otpDigits.forEach((input, i) => {
+      input.addEventListener('input', () => {
+        input.classList.toggle('filled', input.value.length > 0);
+        otpError.textContent = '';
+        otpDigits.forEach(d => d.classList.remove('input-error'));
+        if (input.value && i < otpDigits.length - 1) {
+          otpDigits[i + 1].focus();
+        }
+        // Auto-submit when all filled
+        if (otpDigits.every(d => d.value.length === 1)) {
+          otpForm.requestSubmit();
+        }
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && i > 0) {
+          otpDigits[i - 1].focus();
+        }
+      });
+      // Handle paste on first digit
+      input.addEventListener('paste', (e) => {
+        const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+        if (text.length > 0) {
+          e.preventDefault();
+          text.split('').forEach((ch, idx) => {
+            if (otpDigits[idx]) otpDigits[idx].value = ch;
+          });
+          const nextEmpty = otpDigits.find(d => !d.value);
+          (nextEmpty || otpDigits[otpDigits.length - 1]).focus();
+          if (text.length === 6) otpForm.requestSubmit();
+        }
       });
     });
 
-    form.addEventListener('submit', (e) => {
+    // --- Step 1: Send email code ---
+    emailForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      emailError.textContent = '';
+      emailInput.classList.remove('input-error');
+
       const email = emailInput.value.trim().toLowerCase();
-      const password = passwordInput.value;
 
       if (!ALLOWED_EMAILS.includes(email)) {
-        errorMsg.textContent = 'That email is not authorised to access this site.';
+        emailError.textContent = 'That email is not authorised to access this site.';
         emailInput.classList.add('input-error');
-        emailInput.focus();
         return;
       }
 
-      if (login(password)) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Welcome ♥';
-        const params = new URLSearchParams(window.location.search);
-        const next = params.get('next');
+      emailBtn.textContent = 'Sending…';
+      emailBtn.disabled = true;
+
+      try {
+        signInAttempt = await clerk.client.signIn.create({
+          identifier: email,
+        });
+
+        const emailFactor = signInAttempt.supportedFirstFactors.find(
+          f => f.strategy === 'email_code'
+        );
+
+        if (!emailFactor) throw new Error('Email OTP not available for this account.');
+
+        await signInAttempt.prepareFirstFactor({
+          strategy: 'email_code',
+          emailAddressId: emailFactor.emailAddressId,
+        });
+
+        // Show OTP step
+        emailDisplay.textContent = email;
+        stepEmail.classList.remove('active');
+        stepOtp.classList.add('active');
+        otpDigits[0].focus();
+
+      } catch (err) {
+        emailError.textContent = err.errors?.[0]?.message || err.message || 'Something went wrong. Please try again.';
+        emailInput.classList.add('input-error');
+      } finally {
+        emailBtn.textContent = 'Send code';
+        emailBtn.disabled = false;
+      }
+    });
+
+    // --- Step 2: Verify OTP ---
+    otpForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      otpError.textContent = '';
+      otpDigits.forEach(d => d.classList.remove('input-error'));
+
+      const code = otpDigits.map(d => d.value).join('');
+      if (code.length < 6) {
+        otpError.textContent = 'Please enter the full 6-digit code.';
+        otpDigits.forEach(d => d.classList.add('input-error'));
+        return;
+      }
+
+      otpBtn.textContent = 'Verifying…';
+      otpBtn.disabled = true;
+
+      try {
+        const result = await signInAttempt.attemptFirstFactor({
+          strategy: 'email_code',
+          code,
+        });
+
+        if (result.status === 'complete') {
+          await clerk.setActive({ session: result.createdSessionId });
+          otpBtn.textContent = 'Welcome ♥';
+          setTimeout(() => {
+            window.location.replace(nextUrl ? decodeURIComponent(nextUrl) : './index.html');
+          }, 600);
+        } else {
+          throw new Error('Verification incomplete. Please try again.');
+        }
+      } catch (err) {
+        otpError.textContent = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Incorrect code. Please try again.';
+        otpDigits.forEach(d => d.classList.add('input-error'));
+        otpDigits[0].focus();
+        otpBtn.textContent = 'Verify code';
+        otpBtn.disabled = false;
+      }
+    });
+
+    // --- Back button ---
+    backBtn.addEventListener('click', () => {
+      stepOtp.classList.remove('active');
+      stepEmail.classList.add('active');
+      otpDigits.forEach(d => { d.value = ''; d.classList.remove('filled', 'input-error'); });
+      otpError.textContent = '';
+      signInAttempt = null;
+      emailInput.focus();
+    });
+
+    // --- Resend code ---
+    resendBtn.addEventListener('click', async () => {
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Sending…';
+      try {
+        const emailFactor = signInAttempt.supportedFirstFactors.find(f => f.strategy === 'email_code');
+        await signInAttempt.prepareFirstFactor({
+          strategy: 'email_code',
+          emailAddressId: emailFactor.emailAddressId,
+        });
+        otpDigits.forEach(d => { d.value = ''; d.classList.remove('filled', 'input-error'); });
+        otpError.textContent = '';
+        otpDigits[0].focus();
+        resendBtn.textContent = 'Code resent!';
         setTimeout(() => {
-          window.location.replace(next ? decodeURIComponent(next) : './index.html');
-        }, 600);
-      } else {
-        errorMsg.textContent = 'Incorrect password. Try again.';
-        passwordInput.classList.add('input-error');
-        passwordInput.value = '';
-        passwordInput.focus();
+          resendBtn.textContent = 'Resend code';
+          resendBtn.disabled = false;
+        }, 4000);
+      } catch (err) {
+        resendBtn.textContent = 'Resend code';
+        resendBtn.disabled = false;
+        otpError.textContent = 'Could not resend. Please go back and try again.';
       }
     });
   </script>
