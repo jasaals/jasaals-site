@@ -1,146 +1,327 @@
 <!doctype html>
 <html lang="en">
-  <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>JASAALS — Private</title>
-    <link rel="stylesheet" href="./styles.css" />
-    <style>
-          .login-wrap {
-                  min-height: 100vh;
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  justify-content: center;
-                  padding: 2rem;
-          }
-          .login-card {
-                  background: linear-gradient(180deg, #171e2a, var(--card));
-                  border: 1px solid var(--border);
-                  border-radius: 16px;
-                  padding: 2.5rem 2rem;
-                  width: min(420px, 100%);
-                  text-align: center;
-          }
-          .login-card .eyebrow {
-                  color: var(--accent);
-                  text-transform: uppercase;
-                  letter-spacing: .08em;
-                  font-size: .78rem;
-                  margin: 0 0 .5rem;
-          }
-          .login-card h1 {
-                  margin: 0 0 .25rem;
-                  font-size: 2.2rem;
-          }
-          .login-card .subtitle {
-                  color: var(--muted);
-                  margin: 0 0 2rem;
-                  font-size: .95rem;
-          }
-          .login-form {
-                  display: flex;
-                  flex-direction: column;
-                  gap: .75rem;
-          }
-          .login-form label {
-                  text-align: left;
-                  font-size: .88rem;
-                  color: var(--muted);
-                  margin-bottom: .1rem;
-                  display: block;
-          }
-          .login-form input[type="password"] {
-                  width: 100%;
-                  padding: .7rem 1rem;
-                  background: #0d1117;
-                  border: 1px solid var(--border);
-                  border-radius: 8px;
-                  color: var(--text);
-                  font-size: 1rem;
-                  outline: none;
-                  transition: border-color .2s;
-          }
-          .login-form input[type="password"]:focus {
-                  border-color: var(--accent);
-          }
-          .login-form button {
-                  padding: .75rem 1rem;
-                  background: var(--accent);
-                  color: #0d1117;
-                  border: none;
-                  border-radius: 8px;
-                  font-size: 1rem;
-                  font-weight: 600;
-                  cursor: pointer;
-                  transition: opacity .2s;
-                  margin-top: .25rem;
-          }
-          .login-form button:hover {
-                  opacity: .85;
-          }
-          .error-msg {
-                  color: #f87171;
-                  font-size: .88rem;
-                  min-height: 1.2em;
-                  margin-top: -.25rem;
-          }
-        </style>
-  </head>
-  <body>
-      <div class="login-wrap">
-            <div class="login-card">
-                    <p class="eyebrow">Private Family Space</p>p>
-                    <h1>JASAALS</h1>
-                  <p class="subtitle">Jeffrey + Anna Leah</p>p>
-                  <form class="login-form" id="login-form" autocomplete="off">
-                          <div>
-                                      <label for="password">Password</label>label>
-                                      <input
-                                                    type="password"
-                                                    id="password"
-                                                    name="password"
-                                                    placeholder="Enter password"
-                                                    autofocus
-                                                    required
-                                                  />
-                          </div>
-                            <p class="error-msg" id="error-msg" aria-live="polite"></p>p>
-                            <button type="submit">Enter</button>button>
-                  </form>form>
-            </div>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JASAALS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-      <script type="module">
-            import { login } from './auth.js';
+    :root {
+      --bg-deep: #080c12;
+      --bg-mid: #0d1219;
+      --card: #111720;
+      --border: #1e2a38;
+      --border-hover: #2e4058;
+      --text: #e8edf3;
+      --muted: #7a8a9a;
+      --accent: #7dd3fc;
+      --accent2: #c084fc;
+      --error: #f87171;
+    }
 
-            // If already logged in, skip to homepage
-            if (localStorage.getItem('jasaals_auth') === 'true') {
-                    const params = new URLSearchParams(window.location.search);
-                    const next = params.get('next');
-                    window.location.replace(next ? decodeURIComponent(next) : './index.html');
-            }
+    html, body {
+      height: 100%;
+    }
 
-                  const form = document.getElementById('login-form');
-            const errorMsg = document.getElementById('error-msg');
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: var(--bg-deep);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(125, 211, 252, 0.07), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(192, 132, 252, 0.06), transparent);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
 
-            form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const password = document.getElementById('password').value;
-                    if (login(password)) {
-                              const params = new URLSearchParams(window.location.search);
-                              const next = params.get('next');
-                              window.location.replace(next ? decodeURIComponent(next) : './index.html');
-                    } else {
-                              errorMsg.textContent = 'Incorrect password. Try again.';
-                              document.getElementById('password').value = '';
-                              document.getElementById('password').focus();
-                    }
-            });
-      </script>
-  </body>
-</html>html>
-                          </div></h1>
-  </body>
-    </style></title>
-  </head>
+    .login-outer {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .monogram {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .monogram-ring {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border-hover);
+      background: linear-gradient(135deg, rgba(125,211,252,0.08), rgba(192,132,252,0.06));
+      margin-bottom: 1rem;
+    }
+
+    .monogram-ring span {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 0.05em;
+    }
+
+    .site-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .site-subtitle {
+      font-size: 0.8rem;
+      font-weight: 300;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .login-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.25rem 2rem 2rem;
+      box-shadow:
+        0 0 0 1px rgba(125,211,252,0.03),
+        0 32px 64px rgba(0,0,0,0.5),
+        0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .card-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 400;
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 0.3rem;
+    }
+
+    .card-hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 1.75rem;
+      line-height: 1.5;
+    }
+
+    .field {
+      margin-bottom: 1rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.45rem;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--bg-mid);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 400;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+
+    .field input::placeholder {
+      color: #3a4a5a;
+    }
+
+    .field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(125,211,252,0.1);
+    }
+
+    .field input.input-error {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(248,113,113,0.1);
+    }
+
+    .error-msg {
+      font-size: 0.8rem;
+      color: var(--error);
+      min-height: 1.1em;
+      margin-top: 0.5rem;
+      margin-bottom: 0.25rem;
+      text-align: center;
+    }
+
+    .submit-btn {
+      width: 100%;
+      margin-top: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: linear-gradient(135deg, rgba(125,211,252,0.15), rgba(192,132,252,0.12));
+      border: 1px solid rgba(125,211,252,0.25);
+      border-radius: 10px;
+      color: var(--accent);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+    }
+
+    .submit-btn:hover {
+      background: linear-gradient(135deg, rgba(125,211,252,0.22), rgba(192,132,252,0.18));
+      border-color: rgba(125,211,252,0.45);
+      color: #fff;
+    }
+
+    .submit-btn:active {
+      transform: scale(0.98);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.5rem 0;
+    }
+
+    .footer-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-outer">
+
+    <div class="monogram">
+      <div class="monogram-ring"><span>J&amp;A</span></div>
+      <div class="site-title">JASAALS</div>
+      <div class="site-subtitle">Jeffrey &amp; Anna Leah</div>
+    </div>
+
+    <div class="login-card">
+      <p class="card-heading">Welcome back</p>
+      <p class="card-hint">Enter your email and the site password to continue.</p>
+
+      <form id="login-form" autocomplete="off" novalidate>
+        <div class="field">
+          <label for="email">Email address</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            autofocus
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Site password"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+
+        <p class="error-msg" id="error-msg" role="alert" aria-live="polite"></p>
+
+        <button type="submit" class="submit-btn" id="submit-btn">Enter our space</button>
+      </form>
+
+      <div class="divider"></div>
+      <p class="footer-note">This is a private space for Jeffrey &amp; Anna Leah.<br>If you need access, reach out directly.</p>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { login } from './auth.js';
+
+    const ALLOWED_EMAILS = [
+      'jeffreyspears@pm.me',
+      'annaleahspears@proton.me'
+    ];
+
+    // Skip login if already authenticated
+    if (localStorage.getItem('jasaals_auth') === 'true') {
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get('next');
+      window.location.replace(next ? decodeURIComponent(next) : './index.html');
+    }
+
+    const form = document.getElementById('login-form');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const errorMsg = document.getElementById('error-msg');
+    const submitBtn = document.getElementById('submit-btn');
+
+    [emailInput, passwordInput].forEach(el => {
+      el.addEventListener('input', () => {
+        errorMsg.textContent = '';
+        el.classList.remove('input-error');
+      });
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim().toLowerCase();
+      const password = passwordInput.value;
+
+      if (!ALLOWED_EMAILS.includes(email)) {
+        errorMsg.textContent = 'That email is not authorised to access this site.';
+        emailInput.classList.add('input-error');
+        emailInput.focus();
+        return;
+      }
+
+      if (login(password)) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Welcome ♥';
+        const params = new URLSearchParams(window.location.search);
+        const next = params.get('next');
+        setTimeout(() => {
+          window.location.replace(next ? decodeURIComponent(next) : './index.html');
+        }, 600);
+      } else {
+        errorMsg.textContent = 'Incorrect password. Try again.';
+        passwordInput.classList.add('input-error');
+        passwordInput.value = '';
+        passwordInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>
