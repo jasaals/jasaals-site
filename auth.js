@@ -1,9 +1,9 @@
 // auth.js — Clerk-based auth for JASAALS
-// Uses Clerk Frontend API directly via fetch (no SDK dependency).
-// The publishable key is safe to expose in frontend code.
+// Uses Clerk's vanilla JS SDK via CDN for email OTP authentication.
+// Key: load from clerk.jasaals.com with crossorigin + data attribute for window.Clerk to work.
 
 export const CLERK_PUBLISHABLE_KEY = 'pk_live_Y2xlcmsuamFzYWFscy5jb20k';
-export const CLERK_FRONTEND_API = 'https://clerk.jasaals.com';
+export const CLERK_FRONTEND_API_HOST = 'clerk.jasaals.com';
 
 // Emails allowed to access the site (enforced client-side as a UX gate)
 export const ALLOWED_EMAILS = [
@@ -11,81 +11,58 @@ export const ALLOWED_EMAILS = [
   'annaleahspears@proton.me',
 ];
 
-// --- Session helpers ---
+/**
+ * Load the Clerk SDK and return the Clerk singleton instance.
+ * Must be loaded with data-clerk-publishable-key + crossorigin for window.Clerk to be set.
+ */
+export async function getClerk() {
+  if (window.__clerk_instance) return window.__clerk_instance;
 
-function getStoredSession() {
-  try { return JSON.parse(sessionStorage.getItem('__jasaals_session') || 'null'); }
-  catch { return null; }
-}
-
-function storeSession(data) {
-  sessionStorage.setItem('__jasaals_session', JSON.stringify(data));
-}
-
-function clearSession() {
-  sessionStorage.removeItem('__jasaals_session');
-}
-
-// Verify the stored session is still valid by calling Clerk's /v1/client endpoint
-async function verifySession(clientToken) {
-  try {
-    const res = await fetch(`${CLERK_FRONTEND_API}/v1/client`, {
-      headers: {
-        'Authorization': `Bearer ${clientToken}`,
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
+  if (!window.Clerk || typeof window.Clerk.load !== 'function') {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://${CLERK_FRONTEND_API_HOST}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
+      script.setAttribute('data-clerk-publishable-key', CLERK_PUBLISHABLE_KEY);
+      script.crossOrigin = 'anonymous';
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
     });
-    if (!res.ok) return false;
-    const data = await res.json();
-    // Check if there's at least one active session
-    const activeSessions = data?.response?.sessions?.filter(s => s.status === 'active');
-    return activeSessions && activeSessions.length > 0;
-  } catch {
-    return false;
   }
+
+  // window.Clerk is a singleton instance — just call .load(), no constructor needed
+  await window.Clerk.load();
+  window.__clerk_instance = window.Clerk;
+  return window.Clerk;
 }
 
 /**
  * Call this at the top of every protected page.
- * Redirects to login.html if the user has no valid session.
+ * Redirects to login.html if the user has no active Clerk session.
+ * If Clerk fails to load for any reason, redirects to login as a safe fallback.
  */
 export async function requireAuth() {
   try {
-    const session = getStoredSession();
-    if (!session?.token) {
-      redirect();
-      return;
+    const clerk = await getClerk();
+    if (!clerk.user) {
+      const destination = encodeURIComponent(window.location.href);
+      window.location.replace('./login.html?next=' + destination);
     }
-    const valid = await verifySession(session.token);
-    if (!valid) {
-      clearSession();
-      redirect();
-    }
-  } catch {
-    redirect();
+  } catch (err) {
+    // If auth check fails for any reason, send to login (fail-safe)
+    console.error('Auth check failed, redirecting to login:', err);
+    window.location.replace('./login.html');
   }
-}
-
-function redirect() {
-  const destination = encodeURIComponent(window.location.href);
-  window.location.replace('./login.html?next=' + destination);
 }
 
 /**
  * Sign out and redirect to login.
  */
 export async function logout() {
-  const session = getStoredSession();
-  if (session?.token && session?.sessionId) {
-    try {
-      await fetch(`${CLERK_FRONTEND_API}/v1/client/sessions/${session.sessionId}/revoke`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.token}` },
-        credentials: 'include',
-      });
-    } catch {}
-  }
-  clearSession();
+  try {
+    const clerk = await getClerk();
+    await clerk.signOut();
+  } catch (e) {}
   window.location.replace('./login.html');
 }
