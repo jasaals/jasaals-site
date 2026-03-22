@@ -96,6 +96,7 @@
       <p>Private for now. Public pages can be split out later for wedding photos/blog.</p>
     </footer>
 
+      <script type="module">import { requireAuth } from './auth.js'; requireAuth();</script>
     <script type="module">
       const fetchJson = async (path) => {
         const res = await fetch(path);
