@@ -7,6 +7,7 @@
     <meta name="description" content="All stories from Jeffrey + Anna Leah" />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./blog.css" />
+    <style>body { visibility: hidden; }</style>
   </head>
   <body>
     <header class="site-header">
@@ -25,7 +26,6 @@
         </nav>
       </div>
     </header>
-
     <main class="wrap">
       <section class="card stories-page">
         <h2>Our Stories</h2>
@@ -33,28 +33,25 @@
         <div id="stories-list" class="stories-grid"></div>
       </section>
     </main>
-
     <footer class="wrap footer">
       <p><a href="./index.html">← Back to Home</a></p>
     </footer>
-
-      <script type="module">import { requireAuth } from './auth.js'; await requireAuth();</script>
+    <script type="module">
+      import { requireAuth } from './auth.js';
+      await requireAuth();
+      document.body.style.visibility = 'visible';
+    </script>
     <script type="module">
       const storiesEl = document.getElementById('stories-list');
-
       const fetchJson = async (path) => {
         const res = await fetch(path);
         if (!res.ok) throw new Error(`Failed to load ${path}`);
         return res.json();
       };
-
       (async () => {
         try {
           const posts = await fetchJson('./posts/index.json');
-          
-          // Sort by date (newest first) - assumes ISO date format or consistent ordering
           const sorted = [...posts].reverse();
-          
           storiesEl.innerHTML = sorted.map(post => `
             <article class="story-card">
               ${post.cover ? `<img src="${post.cover}" alt="${post.title}" class="story-cover" loading="lazy" />` : ''}
