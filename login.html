@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>JASAALS — Private</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+          .login-wrap {
+                  min-height: 100vh;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  padding: 2rem;
+          }
+          .login-card {
+                  background: linear-gradient(180deg, #171e2a, var(--card));
+                  border: 1px solid var(--border);
+                  border-radius: 16px;
+                  padding: 2.5rem 2rem;
+                  width: min(420px, 100%);
+                  text-align: center;
+          }
+          .login-card .eyebrow {
+                  color: var(--accent);
+                  text-transform: uppercase;
+                  letter-spacing: .08em;
+                  font-size: .78rem;
+                  margin: 0 0 .5rem;
+          }
+          .login-card h1 {
+                  margin: 0 0 .25rem;
+                  font-size: 2.2rem;
+          }
+          .login-card .subtitle {
+                  color: var(--muted);
+                  margin: 0 0 2rem;
+                  font-size: .95rem;
+          }
+          .login-form {
+                  display: flex;
+                  flex-direction: column;
+                  gap: .75rem;
+          }
+          .login-form label {
+                  text-align: left;
+                  font-size: .88rem;
+                  color: var(--muted);
+                  margin-bottom: .1rem;
+                  display: block;
+          }
+          .login-form input[type="password"] {
+                  width: 100%;
+                  padding: .7rem 1rem;
+                  background: #0d1117;
+                  border: 1px solid var(--border);
+                  border-radius: 8px;
+                  color: var(--text);
+                  font-size: 1rem;
+                  outline: none;
+                  transition: border-color .2s;
+          }
+          .login-form input[type="password"]:focus {
+                  border-color: var(--accent);
+          }
+          .login-form button {
+                  padding: .75rem 1rem;
+                  background: var(--accent);
+                  color: #0d1117;
+                  border: none;
+                  border-radius: 8px;
+                  font-size: 1rem;
+                  font-weight: 600;
+                  cursor: pointer;
+                  transition: opacity .2s;
+                  margin-top: .25rem;
+          }
+          .login-form button:hover {
+                  opacity: .85;
+          }
+          .error-msg {
+                  color: #f87171;
+                  font-size: .88rem;
+                  min-height: 1.2em;
+                  margin-top: -.25rem;
+          }
+        </style>
+  </head>
+  <body>
+      <div class="login-wrap">
+            <div class="login-card">
+                    <p class="eyebrow">Private Family Space</p>p>
+                    <h1>JASAALS</h1>
+                  <p class="subtitle">Jeffrey + Anna Leah</p>p>
+                  <form class="login-form" id="login-form" autocomplete="off">
+                          <div>
+                                      <label for="password">Password</label>label>
+                                      <input
+                                                    type="password"
+                                                    id="password"
+                                                    name="password"
+                                                    placeholder="Enter password"
+                                                    autofocus
+                                                    required
+                                                  />
+                          </div>
+                            <p class="error-msg" id="error-msg" aria-live="polite"></p>p>
+                            <button type="submit">Enter</button>button>
+                  </form>form>
+            </div>
+      </div>
+
+      <script type="module">
+            import { login } from './auth.js';
+
+            // If already logged in, skip to homepage
+            if (localStorage.getItem('jasaals_auth') === 'true') {
+                    const params = new URLSearchParams(window.location.search);
+                    const next = params.get('next');
+                    window.location.replace(next ? decodeURIComponent(next) : './index.html');
+            }
+
+                  const form = document.getElementById('login-form');
+            const errorMsg = document.getElementById('error-msg');
+
+            form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const password = document.getElementById('password').value;
+                    if (login(password)) {
+                              const params = new URLSearchParams(window.location.search);
+                              const next = params.get('next');
+                              window.location.replace(next ? decodeURIComponent(next) : './index.html');
+                    } else {
+                              errorMsg.textContent = 'Incorrect password. Try again.';
+                              document.getElementById('password').value = '';
+                              document.getElementById('password').focus();
+                    }
+            });
+      </script>
+  </body>
+</html>html>
+                          </div></h1>
+  </body>
+    </style></title>
+  </head>
