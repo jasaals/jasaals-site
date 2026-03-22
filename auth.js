@@ -2,7 +2,7 @@
 // Uses Clerk's vanilla JS SDK (loaded via CDN) for email OTP authentication.
 // The publishable key is safe to expose in frontend code.
 
-export const CLERK_PUBLISHABLE_KEY = 'pk_test_ZXF1aXBwZWQtc3BhbmllbC0xMC5jbGVyay5hY2NvdW50cy5kZXYk';
+export const CLERK_PUBLISHABLE_KEY = 'pk_live_Y2xlcmsuamFzYWFscy5jb20k';
 
 // Emails allowed to access the site (enforced client-side as a UX gate)
 export const ALLOWED_EMAILS = [
