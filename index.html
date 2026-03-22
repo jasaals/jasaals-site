@@ -7,6 +7,7 @@
     <meta name="description" content="Jeffrey + Anna Leah private story space" />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./blog.css" />
+    <style>body { visibility: hidden; }</style>
   </head>
   <body>
     <header class="site-header">
@@ -24,7 +25,6 @@
         </nav>
       </div>
     </header>
-
     <main class="wrap">
       <section id="story" class="card">
         <h2><a href="./stories.html" class="section-link">Our Stories</a></h2>
@@ -48,12 +48,14 @@
         <ul id="dream-list" class="dream-list"></ul>
       </section>
     </main>
-
     <footer class="wrap footer">
       <p>Private for now. Public pages can be split out later for wedding photos/blog.</p>
     </footer>
-
-      <script type="module">import { requireAuth } from './auth.js'; await requireAuth();</script>
+    <script type="module">
+      import { requireAuth } from './auth.js';
+      await requireAuth();
+      document.body.style.visibility = 'visible';
+    </script>
     <script src="./app.js" type="module"></script>
   </body>
 </html>
