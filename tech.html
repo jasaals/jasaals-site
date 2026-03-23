@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jeff's Techy Corner — JASAALS</title>
+    <meta name="description" content="Jeff's tech notes, projects, hobbies, and interests" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./blog.css" />
+    <style>body { visibility: hidden; }</style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">Private Family Space</p>
+          <a href="./index.html" class="logo-link"><h1>JASAALS</h1></a>
+          <p class="subtitle">Jeffrey Alexander Spears + Anna Leah Spears</p>
+        </div>
+        <nav>
+          <a href="./index.html">Home</a>
+          <a href="./stories.html">Stories</a>
+          <a href="./tech.html" class="active">Techy Corner</a>
+          <a href="./vlog.html">Vlog</a>
+          <a href="./index.html#gallery">Gallery</a>
+          <a href="./index.html#vision">Vision Board</a>
+          <a href="./index.html#dreams">Dream List</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <section class="card stories-page">
+        <h2>Jeff's Techy Corner</h2>
+        <p class="page-intro">Notes, projects, hobbies, and things I'm working on or learning about.</p>
+        <div id="tech-list" class="stories-grid"></div>
+      </section>
+    </main>
+    <footer class="wrap footer">
+      <p><a href="./index.html">Back to Home</a></p>
+    </footer>
+    <script type="module">
+      import { requireAuth } from './auth.js';
+      await requireAuth();
+      document.body.style.visibility = 'visible';
+    </script>
+    <script type="module">
+      const techEl = document.getElementById('tech-list');
+      const fetchJson = async (path) => {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error("Failed to load " + path);
+        return res.json();
+      };
+      (async () => {
+        try {
+          const posts = await fetchJson('./tech-posts/index.json');
+          const sorted = [...posts].reverse();
+          if (sorted.length === 0) {
+            techEl.innerHTML = '<p class="hint">No posts yet. Add entries to <code>tech-posts/index.json</code> to get started.</p>';
+            return;
+          }
+          techEl.innerHTML = sorted.map(post =>
+            '<article class="story-card">' +
+            (post.cover ? '<img src="' + post.cover + '" alt="' + post.title + '" class="story-cover" loading="lazy" />' : '') +
+            '<div class="story-card-content">' +
+            '<span class="story-date">' + post.date + '</span>' +
+            (post.tags ? '<span class="tech-tags">' + post.tags.map(t => '<span class="tech-tag">' + t + '</span>').join('') + '</span>' : '') +
+            '<h3><a href="./tech-post.html?slug=' + post.slug + '">' + post.title + '</a></h3>' +
+            '<p>' + post.excerpt + '</p>' +
+            '<a href="./tech-post.html?slug=' + post.slug + '" class="read-more">Read more &rarr;</a>' +
+            '</div></article>'
+          ).join('');
+        } catch (err) {
+          console.error(err);
+          techEl.innerHTML = '<p>Could not load posts. Make sure <code>tech-posts/index.json</code> exists.</p>';
+        }
+      })();
+    </script>
+  </body>
+</html>
