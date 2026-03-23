@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vlog — JASAALS</title>
+    <meta name="description" content="Jeff and Anna Leah's family vlog — videos from our lives" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./blog.css" />
+    <style>body { visibility: hidden; }</style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">Private Family Space</p>
+          <a href="./index.html" class="logo-link"><h1>JASAALS</h1></a>
+          <p class="subtitle">Jeffrey Alexander Spears + Anna Leah Spears</p>
+        </div>
+        <nav>
+          <a href="./index.html">Home</a>
+          <a href="./stories.html">Stories</a>
+          <a href="./tech.html">Techy Corner</a>
+          <a href="./vlog.html" class="active">Vlog</a>
+          <a href="./index.html#gallery">Gallery</a>
+          <a href="./index.html#vision">Vision Board</a>
+          <a href="./index.html#dreams">Dream List</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <section class="card stories-page">
+        <h2>Our Vlog</h2>
+        <p class="page-intro">Videos from our lives — moments to remember and share with the kids someday.</p>
+        <div id="vlog-list" class="vlog-grid"></div>
+      </section>
+    </main>
+    <footer class="wrap footer">
+      <p><a href="./index.html">Back to Home</a></p>
+    </footer>
+    <script type="module">
+      import { requireAuth } from './auth.js';
+      await requireAuth();
+      document.body.style.visibility = 'visible';
+    </script>
+    <script type="module">
+      const vlogEl = document.getElementById('vlog-list');
+      const fetchJson = async (path) => {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error("Failed to load " + path);
+        return res.json();
+      };
+
+      function renderVideo(entry) {
+        let videoHtml = '';
+        if (entry.src) {
+          videoHtml = '<div class="vlog-video-wrap"><video controls preload="metadata" poster="' + (entry.poster || '') + '"><source src="' + entry.src + '" /><p>Your browser does not support video.</p></video></div>';
+        } else if (entry.youtube) {
+          videoHtml = '<div class="vlog-video-wrap video-embed"><iframe src="https://www.youtube.com/embed/' + entry.youtube + '" frameborder="0" allowfullscreen></iframe></div>';
+        } else if (entry.vimeo) {
+          videoHtml = '<div class="vlog-video-wrap video-embed"><iframe src="https://player.vimeo.com/video/' + entry.vimeo + '" frameborder="0" allowfullscreen></iframe></div>';
+        } else if (entry.poster) {
+          videoHtml = '<div class="vlog-video-wrap"><img src="' + entry.poster + '" alt="' + entry.title + '" class="vlog-poster" /></div>';
+        }
+
+        return '<article class="vlog-entry">' +
+          videoHtml +
+          '<div class="vlog-meta">' +
+          '<span class="story-date">' + entry.date + '</span>' +
+          (entry.author ? '<span class="vlog-author"> &mdash; ' + entry.author + '</span>' : '') +
+          '<h3>' + entry.title + '</h3>' +
+          (entry.description ? '<p>' + entry.description + '</p>' : '') +
+          '</div>' +
+          '</article>';
+      }
+
+      (async () => {
+        try {
+          const entries = await fetchJson('./vlog-entries/index.json');
+          const sorted = [...entries].reverse();
+          if (sorted.length === 0) {
+            vlogEl.innerHTML = '<p class="hint">No videos yet. Add entries to <code>vlog-entries/index.json</code> to get started.</p>';
+            return;
+          }
+          vlogEl.innerHTML = sorted.map(renderVideo).join('');
+        } catch (err) {
+          console.error(err);
+          vlogEl.innerHTML = '<p>Could not load vlog entries. Make sure <code>vlog-entries/index.json</code> exists.</p>';
+        }
+      })();
+    </script>
+  </body>
+</html>
