@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading... — Jeff's Techy Corner</title>
+    <meta name="description" content="A post from Jeff's Techy Corner" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./blog.css" />
+    <style>body { visibility: hidden; }</style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">Private Family Space</p>
+          <a href="./index.html" class="logo-link"><h1>JASAALS</h1></a>
+          <p class="subtitle">Jeffrey Alexander Spears + Anna Leah Spears</p>
+        </div>
+        <nav>
+          <a href="./index.html">Home</a>
+          <a href="./stories.html">Stories</a>
+          <a href="./tech.html" class="active">Techy Corner</a>
+          <a href="./vlog.html">Vlog</a>
+          <a href="./index.html#gallery">Gallery</a>
+          <a href="./index.html#vision">Vision Board</a>
+          <a href="./index.html#dreams">Dream List</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <article class="card post-page">
+        <a href="./tech.html" class="back-link">Back to Techy Corner</a>
+        <header class="post-header" id="post-header">
+          <span class="story-date" id="post-date"></span>
+          <div id="post-tags" class="tech-tags"></div>
+          <h1 id="post-title">Loading...</h1>
+        </header>
+        <div id="post-cover"></div>
+        <div id="post-content" class="post-content">
+          <p class="loading-text">Loading post...</p>
+        </div>
+      </article>
+    </main>
+    <footer class="wrap footer">
+      <div class="post-nav" id="post-nav"></div>
+      <p><a href="./tech.html">Back to Techy Corner</a></p>
+    </footer>
+    <script type="module">
+      import { requireAuth } from './auth.js';
+      await requireAuth();
+      document.body.style.visibility = 'visible';
+    </script>
+    <script type="module">
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get('slug');
+      const postTitle = document.getElementById('post-title');
+      const postDate = document.getElementById('post-date');
+      const postTags = document.getElementById('post-tags');
+      const postCover = document.getElementById('post-cover');
+      const postContent = document.getElementById('post-content');
+      const postNav = document.getElementById('post-nav');
+
+      marked.setOptions({ breaks: true, gfm: true });
+
+      const fetchJson = async (path) => {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error("Failed to load " + path);
+        return res.json();
+      };
+      const fetchText = async (path) => {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error("Failed to load " + path);
+        return res.text();
+      };
+
+      const renderer = new marked.Renderer();
+      renderer.image = function(href, title, text) {
+        let actualHref = href, actualTitle = title, actualText = text;
+        if (typeof href === 'object') {
+          actualText = href.text || '';
+          actualTitle = href.title || '';
+          actualHref = href.href || '';
+        }
+        if (actualHref.startsWith('youtube:')) {
+          const videoId = actualHref.replace('youtube:', '');
+          return '<div class="video-embed"><iframe src="https://www.youtube.com/embed/' + videoId + '" frameborder="0" allowfullscreen></iframe></div>';
+        }
+        if (actualHref.startsWith('vimeo:')) {
+          const videoId = actualHref.replace('vimeo:', '');
+          return '<div class="video-embed"><iframe src="https://player.vimeo.com/video/' + videoId + '" frameborder="0" allowfullscreen></iframe></div>';
+        }
+        if (actualHref.startsWith('video:')) {
+          const videoSrc = actualHref.replace('video:', '');
+          return '<div class="video-embed"><video controls preload="metadata"><source src="' + videoSrc + '" /><p>Your browser does not support video.</p></video></div>';
+        }
+        if (actualHref.startsWith('map:')) {
+          const mapEmbed = actualHref.replace('map:', '');
+          return '<div class="map-embed"><iframe src="https://www.google.com/maps/embed?pb=' + mapEmbed + '" frameborder="0" allowfullscreen></iframe></div>';
+        }
+        const caption = actualTitle ? '<figcaption>' + actualTitle + '</figcaption>' : '';
+        return '<figure class="post-image"><img src="' + actualHref + '" alt="' + actualText + '" loading="lazy" />' + caption + '</figure>';
+      };
+      marked.use({ renderer });
+
+      (async () => {
+        if (!slug) {
+          postTitle.textContent = 'Post not found';
+          postContent.innerHTML = '<p>No post specified. <a href="./tech.html">View all posts</a>.</p>';
+          return;
+        }
+        try {
+          const posts = await fetchJson('./tech-posts/index.json');
+          const post = posts.find(p => p.slug === slug);
+          if (!post) {
+            postTitle.textContent = 'Post not found';
+            postContent.innerHTML = '<p>This post does not exist. <a href="./tech.html">View all posts</a>.</p>';
+            return;
+          }
+          document.title = post.title + " — Jeff's Techy Corner";
+          postTitle.textContent = post.title;
+          postDate.textContent = post.date;
+          if (post.tags && post.tags.length) {
+            postTags.innerHTML = post.tags.map(t => '<span class="tech-tag">' + t + '</span>').join('');
+          }
+          if (post.cover) {
+            postCover.innerHTML = '<img src="' + post.cover + '" alt="' + post.title + '" class="post-cover-image" />';
+          }
+          const markdown = await fetchText('./tech-posts/' + slug + '.md');
+          postContent.innerHTML = marked.parse(markdown);
+          const currentIndex = posts.findIndex(p => p.slug === slug);
+          let navHtml = '';
+          if (currentIndex > 0) {
+            const prev = posts[currentIndex - 1];
+            navHtml += '<a href="./tech-post.html?slug=' + prev.slug + '" class="nav-prev">' + prev.title + '</a>';
+          }
+          if (currentIndex < posts.length - 1) {
+            const next = posts[currentIndex + 1];
+            navHtml += '<a href="./tech-post.html?slug=' + next.slug + '" class="nav-next">' + next.title + ' &rarr;</a>';
+          }
+          postNav.innerHTML = navHtml;
+        } catch (err) {
+          console.error(err);
+          postContent.innerHTML = '<p>Could not load this post. The Markdown file may not exist yet.</p>';
+        }
+      })();
+    </script>
+  </body>
+</html>
