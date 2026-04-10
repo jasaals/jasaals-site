@@ -267,26 +267,30 @@ const SATELLITE_API_URL = 'https://broad-rice-b986.cloudflare-io4wf.workers.dev/
     async function initCesium() {
   setLoadStatus('Initializing 3D globe…');
 
-  viewer = new Cesium.Viewer('cesium-container', {
-    terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-    baseLayerPicker: false,
-    geocoder: false,
-    homeButton: false,
-    sceneModePicker: false,
-    navigationHelpButton: false,
-    animation: false,
-    timeline: false,
-    fullscreenButton: false,
-    infoBox: false,
-    selectionIndicator: false,
-    shadows: false,
-    shouldAnimate: true,
-  });
+viewer = new Cesium.Viewer('cesium-container', {
+  terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+  imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+    url: 'https://tile.openstreetmap.org/'
+  }),
+  baseLayerPicker: false,
+  geocoder: false,
+  homeButton: false,
+  sceneModePicker: false,
+  navigationHelpButton: false,
+  animation: false,
+  timeline: false,
+  fullscreenButton: false,
+  infoBox: false,
+  selectionIndicator: false,
+  shadows: false,
+  shouldAnimate: true,
+});
 
   // Dark atmosphere / space look
   viewer.scene.backgroundColor = Cesium.Color.BLACK;
   viewer.scene.skyBox.show = true;
   viewer.scene.globe.enableLighting = true;
+  viewer.camera.flyHome(0);
 
   // ── Google Photorealistic 3D Tiles ──
   if (GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY') {
@@ -326,7 +330,7 @@ const SATELLITE_API_URL = 'https://broad-rice-b986.cloudflare-io4wf.workers.dev/
     // ════════════════════════════════════════════════════
     async function fetchCivilFlights() {
       // OpenSky anonymous API — no auth, limited rate
-      const url = 'https://opensky-network.org/api/states/all?lamin=10&lomin=-130&lamax=75&lomax=60';
+      const url = 'https://opensky-network.org/api/states/all';
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error('OpenSky HTTP ' + res.status);
