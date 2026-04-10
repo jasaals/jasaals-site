@@ -205,10 +205,10 @@
 
       <!-- Visual filters -->
       <div id="mode-bar">
-        <button class="mode-btn active" onclick="setMode('normal')">Normal</button>
-        <button class="mode-btn" onclick="setMode('night')">Night Vision</button>
-        <button class="mode-btn" onclick="setMode('flir')">FLIR</button>
-        <button class="mode-btn" onclick="setMode('crt')">CRT</button>
+        <button class="mode-btn active" onclick="setMode('normal', this)">Normal</button>
+<button class="mode-btn" onclick="setMode('night', this)">Night Vision</button>
+<button class="mode-btn" onclick="setMode('flir', this)">FLIR</button>
+<button class="mode-btn" onclick="setMode('crt', this)">CRT</button>
       </div>
 
       <!-- Flight info popup -->
@@ -247,11 +247,10 @@
     // ════════════════════════════════════════════════════
     //  CONFIG — swap in your own keys to unlock full data
     // ════════════════════════════════════════════════════
-    const CESIUM_ION_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWE1OWUxNy1mMWZiLTQzYjYtYTQ1OS01YTc3OGIwOGJjYzAiLCJpZCI6OTYyMCwic2NvcGVzIjpbImFzc2V0cyIsInRlcnJhaW4iLCJhc3NldHNJbmdlc3QiLCJhcHBsaWNhdGlvbnMiLCJtYXAiLCJhc3NldHNXcml0ZSJdLCJpYXQiOjE1NjA4MDEwMTZ9.1FNiClUyk00II7oMDcpCmWIFuMlIpDYUMkxmFQe4kCI'; // default demo token
-    const GOOGLE_MAPS_API_KEY = 'AIzaSyA6EwsaCgVzkVIHE0w33zxItSx17aqwias'; // replace me!
+    const GOOGLE_MAPS_API_KEY = 'AIzaSyA6EwsaCgVzkVIHE0w33zxItSx17aqwias';
 
     // ── state ──
-    let viewer, civilDs, militaryDs;
+    let viewer, civilDs, militaryDs, googleTileset = null;
     let civilVisible = true, militaryVisible = true, globeVisible = true;
     let refreshTimer = null;
     const REFRESH_MS = 15000; // 15 seconds
@@ -260,24 +259,55 @@
     //  INIT CESIUM
     // ════════════════════════════════════════════════════
     async function initCesium() {
-      setLoadStatus('Initializing Cesium Ion…');
-      Cesium.Ion.defaultAccessToken = CESIUM_ION_TOKEN;
+  setLoadStatus('Initializing 3D globe…');
 
-      viewer = new Cesium.Viewer('cesium-container', {
-        terrainProvider: await Cesium.createWorldTerrainAsync(),
-        baseLayerPicker: false,
-        geocoder: false,
-        homeButton: false,
-        sceneModePicker: false,
-        navigationHelpButton: false,
-        animation: false,
-        timeline: false,
-        fullscreenButton: false,
-        infoBox: false,
-        selectionIndicator: false,
-        shadows: false,
-        shouldAnimate: true,
-      });
+  viewer = new Cesium.Viewer('cesium-container', {
+    terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+    baseLayerPicker: false,
+    geocoder: false,
+    homeButton: false,
+    sceneModePicker: false,
+    navigationHelpButton: false,
+    animation: false,
+    timeline: false,
+    fullscreenButton: false,
+    infoBox: false,
+    selectionIndicator: false,
+    shadows: false,
+    shouldAnimate: true,
+  });
+
+  // Dark atmosphere / space look
+  viewer.scene.backgroundColor = Cesium.Color.BLACK;
+  viewer.scene.skyBox.show = true;
+  viewer.scene.globe.enableLighting = true;
+
+  // ── Google Photorealistic 3D Tiles ──
+  if (GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY') {
+    setLoadStatus('Loading Google 3D Tiles…');
+    try {
+      googleTileset = await Cesium.Cesium3DTileset.fromUrl(
+        'https://tile.googleapis.com/v1/3dtiles/root.json?key=' + GOOGLE_MAPS_API_KEY
+      );
+      viewer.scene.primitives.add(googleTileset);
+      viewer.scene.globe.show = false;
+    } catch (e) {
+      console.warn('Google 3D Tiles failed:', e);
+      showApiNotice();
+    }
+  } else {
+    showApiNotice();
+  }
+
+  // Click handler for aircraft selection
+  viewer.screenSpaceEventHandler.setInputAction(onLeftClick, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+  setLoadStatus('Fetching flight data…');
+  await refreshFlights();
+  hideLoading();
+
+  refreshTimer = setInterval(refreshFlights, REFRESH_MS);
+}
 
       // Dark atmosphere / space look
       viewer.scene.backgroundColor = Cesium.Color.BLACK;
@@ -506,52 +536,55 @@
     //  LAYER TOGGLES
     // ════════════════════════════════════════════════════
     function toggleLayer(layer) {
-      const btn = document.getElementById('btn-' + layer);
-      if (layer === 'civil') {
-        civilVisible = !civilVisible;
-        if (civilDs) civilDs.show = civilVisible;
-        btn.classList.toggle('active', civilVisible);
-      } else if (layer === 'military') {
-        militaryVisible = !militaryVisible;
-        if (militaryDs) militaryDs.show = militaryVisible;
-        btn.classList.toggle('active', militaryVisible);
-      } else if (layer === 'globe') {
-        globeVisible = !globeVisible;
-        viewer.scene.globe.show = globeVisible;
-        btn.classList.toggle('active', globeVisible);
-      }
+  const btn = document.getElementById('btn-' + layer);
+
+  if (layer === 'civil') {
+    civilVisible = !civilVisible;
+    if (civilDs) civilDs.show = civilVisible;
+    btn.classList.toggle('active', civilVisible);
+  } else if (layer === 'military') {
+    militaryVisible = !militaryVisible;
+    if (militaryDs) militaryDs.show = militaryVisible;
+    btn.classList.toggle('active', militaryVisible);
+  } else if (layer === 'globe') {
+    globeVisible = !globeVisible;
+
+    if (googleTileset) {
+      googleTileset.show = globeVisible;
+      viewer.scene.globe.show = !globeVisible;
+    } else {
+      viewer.scene.globe.show = globeVisible;
     }
+
+    btn.classList.toggle('active', globeVisible);
+  }
+}
 
     // ════════════════════════════════════════════════════
     //  VISUAL MODES (CRT / Night Vision / FLIR)
     // ════════════════════════════════════════════════════
-    const postProcessStages = {};
+    function setMode(mode, btn) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
 
-    function setMode(mode) {
-      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
+  if (viewer && viewer.scene && viewer.scene.postProcessStages) {
+    viewer.scene.postProcessStages.removeAll();
+  }
 
-      // Remove existing effects
-      if (viewer.scene.postProcessStages) {
-        viewer.scene.postProcessStages.removeAll();
-      }
+  const container = document.getElementById('cesium-container');
+  container.style.filter = '';
+  container.style.backgroundImage = '';
 
-      const container = document.getElementById('cesium-container');
-      container.style.filter = '';
-
-      if (mode === 'night') {
-        container.style.filter = 'brightness(0.7) saturate(0) hue-rotate(120deg)';
-      } else if (mode === 'flir') {
-        container.style.filter = 'sepia(1) saturate(3) hue-rotate(320deg) contrast(1.4) brightness(0.85)';
-      } else if (mode === 'crt') {
-        container.style.filter = 'brightness(1.1) contrast(1.3) saturate(1.2)';
-        // Add scanline overlay via pseudo
-        container.style.backgroundImage =
-          'repeating-linear-gradient(0deg, rgba(0,0,0,0.07) 0px, rgba(0,0,0,0.07) 1px, transparent 1px, transparent 3px)';
-      } else {
-        container.style.backgroundImage = '';
-      }
-    }
+  if (mode === 'night') {
+    container.style.filter = 'brightness(0.7) saturate(0) hue-rotate(120deg)';
+  } else if (mode === 'flir') {
+    container.style.filter = 'sepia(1) saturate(3) hue-rotate(320deg) contrast(1.4) brightness(0.85)';
+  } else if (mode === 'crt') {
+    container.style.filter = 'brightness(1.1) contrast(1.3) saturate(1.2)';
+    container.style.backgroundImage =
+      'repeating-linear-gradient(0deg, rgba(0,0,0,0.07) 0px, rgba(0,0,0,0.07) 1px, transparent 1px, transparent 3px)';
+  }
+}
 
     // ════════════════════════════════════════════════════
     //  CLICK — show flight info
@@ -606,9 +639,10 @@
       setTimeout(() => {
         if (typeof Cesium !== 'undefined') {
           initCesium().catch(e => {
-            console.error('WorldView init error:', e);
-            setLoadStatus('Error: ' + e.message);
-          });
+  console.error('WorldView init error:', e);
+  const msg = e && e.message ? e.message : String(e);
+  setLoadStatus('Error: ' + msg);
+});
         } else {
           setLoadStatus('Error: CesiumJS failed to load.');
         }
