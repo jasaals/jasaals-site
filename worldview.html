@@ -437,13 +437,14 @@ async function refreshSatellites() {
       },
     });
   });
-
-  async function manualRefresh() {
-  await refreshFlights();
-  await refreshSatellites();
-}
+  
   await viewer.dataSources.add(satelliteDs);
   satelliteDs.show = satelliteVisible;
+}
+
+      async function manualRefresh() {
+  await refreshFlights();
+  await refreshSatellites();
 }
 
 function updateSatellitePositions() {
