@@ -199,8 +199,9 @@
       <div id="controls">
         <button class="ctrl-btn active" id="btn-civil" onclick="toggleLayer('civil')">✈ Civil Flights</button>
         <button class="ctrl-btn active" id="btn-military" onclick="toggleLayer('military')">🛡 Military</button>
+        <button class="ctrl-btn active" id="btn-satellites" onclick="toggleLayer('satellites')">🛰 Satellites</button>
         <button class="ctrl-btn active" id="btn-globe" onclick="toggleLayer('globe')">🌍 Google 3D Tiles</button>
-        <button class="ctrl-btn" id="btn-refresh" onclick="refreshFlights()">↻ Refresh Now</button>
+        <button class="ctrl-btn" id="btn-refresh" onclick="manualRefresh()">↻ Refresh Now</button>
       </div>
 
       <!-- Visual filters -->
@@ -242,6 +243,7 @@
     <!-- CesiumJS -->
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.116/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.116/Build/Cesium/Cesium.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/satellite.js/dist/satellite.min.js"></script>
 
     <script>
     // ════════════════════════════════════════════════════
@@ -250,10 +252,14 @@
     const GOOGLE_MAPS_API_KEY = 'AIzaSyA6EwsaCgVzkVIHE0w33zxItSx17aqwias';
 
     // ── state ──
-    let viewer, civilDs, militaryDs, googleTileset = null;
-    let civilVisible = true, militaryVisible = true, globeVisible = true;
-    let refreshTimer = null;
-    const REFRESH_MS = 15000; // 15 seconds
+    let viewer, civilDs, militaryDs, satelliteDs, googleTileset = null;
+let civilVisible = true, militaryVisible = true, satelliteVisible = true, globeVisible = true;
+let refreshTimer = null;
+let satelliteAnimTimer = null;
+let satellitesRaw = [];
+const REFRESH_MS = 15000;
+const SATELLITE_UPDATE_MS = 5000;
+const SATELLITE_API_URL = 'https://broad-rice-b986.cloudflare-io4wf.workers.dev/api/satellites/raw';
 
     // ════════════════════════════════════════════════════
     //  INIT CESIUM
@@ -304,43 +310,12 @@
 
   setLoadStatus('Fetching flight data…');
   await refreshFlights();
+  await refreshSatellites();
   hideLoading();
 
   refreshTimer = setInterval(refreshFlights, REFRESH_MS);
+  satelliteAnimTimer = setInterval(updateSatellitePositions, SATELLITE_UPDATE_MS);
 }
-
-      // Dark atmosphere / space look
-      viewer.scene.backgroundColor = Cesium.Color.BLACK;
-      viewer.scene.skyBox.show = true;
-      viewer.scene.globe.enableLighting = true;
-
-      // ── Google Photorealistic 3D Tiles ──
-      if (GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY') {
-        setLoadStatus('Loading Google 3D Tiles…');
-        try {
-          const tileset = await Cesium.Cesium3DTileset.fromUrl(
-            'https://tile.googleapis.com/v1/3dtiles/root.json?key=' + GOOGLE_MAPS_API_KEY
-          );
-          viewer.scene.primitives.add(tileset);
-          viewer.scene.globe.show = false; // hide default globe when using Google tiles
-        } catch (e) {
-          console.warn('Google 3D Tiles failed:', e);
-          showApiNotice();
-        }
-      } else {
-        showApiNotice();
-      }
-
-      // Click handler for aircraft selection
-      viewer.screenSpaceEventHandler.setInputAction(onLeftClick, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-
-      setLoadStatus('Fetching flight data…');
-      await refreshFlights();
-      hideLoading();
-
-      // Auto-refresh
-      refreshTimer = setInterval(refreshFlights, REFRESH_MS);
-    }
 
     function showApiNotice() {
       document.getElementById('api-notice').style.display = 'block';
@@ -380,6 +355,119 @@
         return generateDemoMilitary(12);
       }
     }
+
+      async function fetchSatellites() {
+  try {
+    const res = await fetch(SATELLITE_API_URL);
+    if (!res.ok) throw new Error('Satellite API HTTP ' + res.status);
+    const data = await res.json();
+    return data.satellites || [];
+  } catch (e) {
+    console.warn('Satellite API error:', e);
+    return [];
+  }
+}
+
+function getSatellitePosition(sat, when = new Date()) {
+  try {
+    const satrec = satellite.twoline2satrec(sat.TLE_LINE1, sat.TLE_LINE2);
+    const positionAndVelocity = satellite.propagate(satrec, when);
+    const positionEci = positionAndVelocity.position;
+    if (!positionEci) return null;
+
+    const gmst = satellite.gstime(when);
+    const positionGd = satellite.eciToGeodetic(positionEci, gmst);
+
+    const longitude = satellite.degreesLong(positionGd.longitude);
+    const latitude = satellite.degreesLat(positionGd.latitude);
+    const heightMeters = (positionGd.height || 0) * 1000;
+
+    return { longitude, latitude, heightMeters };
+  } catch (e) {
+    console.warn('Satellite propagation error for', sat.OBJECT_NAME, e);
+    return null;
+  }
+}
+
+async function refreshSatellites() {
+  satellitesRaw = await fetchSatellites();
+
+  if (satelliteDs) viewer.dataSources.remove(satelliteDs, true);
+  satelliteDs = new Cesium.CustomDataSource('satellites');
+
+  const now = new Date();
+
+  satellitesRaw.forEach((sat) => {
+    const pos = getSatellitePosition(sat, now);
+    if (!pos) return;
+
+    satelliteDs.entities.add({
+      id: 'sat-' + sat.NORAD_CAT_ID,
+      position: Cesium.Cartesian3.fromDegrees(
+        pos.longitude,
+        pos.latitude,
+        pos.heightMeters
+      ),
+      point: {
+        pixelSize: sat.OBJECT_NAME.includes('ISS') ? 10 : 6,
+        color: sat.OBJECT_NAME.includes('ISS') ? Cesium.Color.YELLOW : Cesium.Color.CYAN,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 1,
+      },
+      label: {
+        text: sat.OBJECT_NAME,
+        font: '11px monospace',
+        fillColor: Cesium.Color.CYAN,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 2,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        pixelOffset: new Cesium.Cartesian2(0, -18),
+        scale: 0.8,
+        show: true,
+      },
+      properties: {
+        type: 'satellite',
+        callsign: sat.OBJECT_NAME,
+        altitude: Math.round(pos.heightMeters / 1000) + ' km',
+        speed: 'Orbital',
+        heading: '–',
+        country: sat.GROUP || '–',
+        icao: String(sat.NORAD_CAT_ID),
+        onGround: 'No',
+      },
+    });
+  });
+
+  async function manualRefresh() {
+  await refreshFlights();
+  await refreshSatellites();
+}
+  await viewer.dataSources.add(satelliteDs);
+  satelliteDs.show = satelliteVisible;
+}
+
+function updateSatellitePositions() {
+  if (!satelliteDs || !satellitesRaw.length) return;
+
+  const now = new Date();
+
+  satelliteDs.entities.values.forEach((entity) => {
+    const norad = entity.id.replace('sat-', '');
+    const sat = satellitesRaw.find(s => String(s.NORAD_CAT_ID) === norad);
+    if (!sat) return;
+
+    const pos = getSatellitePosition(sat, now);
+    if (!pos) return;
+
+    entity.position = Cesium.Cartesian3.fromDegrees(
+      pos.longitude,
+      pos.latitude,
+      pos.heightMeters
+    );
+
+    entity.properties.altitude = Math.round(pos.heightMeters / 1000) + ' km';
+  });
+}
 
     // ════════════════════════════════════════════════════
     //  DEMO DATA — shown when live API is unavailable
@@ -546,6 +634,10 @@
     militaryVisible = !militaryVisible;
     if (militaryDs) militaryDs.show = militaryVisible;
     btn.classList.toggle('active', militaryVisible);
+    } else if (layer === 'satellites') {
+  satelliteVisible = !satelliteVisible;
+  if (satelliteDs) satelliteDs.show = satelliteVisible;
+  btn.classList.toggle('active', satelliteVisible);
   } else if (layer === 'globe') {
     globeVisible = !globeVisible;
 
@@ -594,7 +686,11 @@
       if (Cesium.defined(picked) && picked.id && picked.id.properties) {
         const p = picked.id.properties;
         document.getElementById('popup-callsign').textContent =
-          (p.type?.getValue() === 'military' ? '🛡 ' : '✈ ') + p.callsign.getValue();
+          (
+  p.type?.getValue() === 'military' ? '🛡 ' :
+  p.type?.getValue() === 'satellite' ? '🛰 ' :
+  '✈ '
+) + p.callsign.getValue();
         document.getElementById('popup-alt').textContent = p.altitude.getValue();
         document.getElementById('popup-spd').textContent = p.speed.getValue();
         document.getElementById('popup-hdg').textContent = p.heading.getValue();
