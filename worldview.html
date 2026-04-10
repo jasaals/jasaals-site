@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WorldView — JASAALS</title>
+    <meta name="description" content="Live 3D flight tracker — CesiumJS + Google 3D Tiles + OpenSky + ADS-B" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./blog.css" />
+    <style>
+      body { visibility: hidden; margin: 0; padding: 0; }
+
+      /* ── full-page map layout ── */
+      .worldview-page { display: flex; flex-direction: column; height: 100vh; }
+      .worldview-page .site-header { flex-shrink: 0; }
+      #cesium-container {
+        flex: 1;
+        position: relative;
+        background: #000;
+        overflow: hidden;
+      }
+
+      /* ── HUD overlay ── */
+      #hud {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+      }
+      .hud-panel {
+        background: rgba(0,0,0,0.70);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 8px;
+        padding: 10px 14px;
+        color: #e8f4ff;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        pointer-events: all;
+        backdrop-filter: blur(6px);
+      }
+      .hud-panel h3 {
+        margin: 0 0 6px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #7ec8ff;
+      }
+      #flight-count { font-size: 22px; font-weight: bold; color: #4ade80; }
+      #military-count { font-size: 22px; font-weight: bold; color: #f87171; }
+      #last-updated { font-size: 10px; color: #94a3b8; margin-top: 4px; }
+
+      /* ── controls panel ── */
+      #controls {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .ctrl-btn {
+        background: rgba(0,0,0,0.72);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 6px;
+        color: #e8f4ff;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        padding: 7px 12px;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        transition: background 0.15s;
+        text-align: left;
+        white-space: nowrap;
+      }
+      .ctrl-btn:hover { background: rgba(30,80,160,0.75); }
+      .ctrl-btn.active { background: rgba(30,80,160,0.90); border-color: #7ec8ff; color: #7ec8ff; }
+
+      /* ── filter mode buttons ── */
+      #mode-bar {
+        position: absolute;
+        bottom: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        display: flex;
+        gap: 8px;
+      }
+      .mode-btn {
+        background: rgba(0,0,0,0.78);
+        border: 1px solid rgba(255,255,255,0.20);
+        border-radius: 20px;
+        color: #cdd9e8;
+        font-size: 12px;
+        padding: 6px 16px;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        transition: all 0.15s;
+      }
+      .mode-btn:hover { border-color: #7ec8ff; color: #7ec8ff; }
+      .mode-btn.active { background: rgba(30,100,200,0.85); border-color: #7ec8ff; color: #fff; }
+
+      /* ── info popup ── */
+      #info-popup {
+        position: absolute;
+        bottom: 60px;
+        left: 12px;
+        z-index: 10;
+        min-width: 220px;
+        display: none;
+      }
+      #info-popup table { width: 100%; border-collapse: collapse; }
+      #info-popup td { padding: 2px 6px; font-size: 11px; }
+      #info-popup td:first-child { color: #7ec8ff; width: 90px; }
+
+      /* ── loading overlay ── */
+      #loading-screen {
+        position: absolute;
+        inset: 0;
+        background: #080f1a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        color: #7ec8ff;
+        font-family: 'Courier New', monospace;
+        gap: 16px;
+      }
+      #loading-screen .title { font-size: 28px; font-weight: bold; letter-spacing: 0.12em; }
+      #loading-screen .sub { font-size: 13px; color: #94a3b8; }
+      .spinner {
+        width: 40px; height: 40px;
+        border: 3px solid rgba(126,200,255,0.2);
+        border-top-color: #7ec8ff;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* ── API key notice ── */
+      #api-notice {
+        position: absolute;
+        bottom: 60px;
+        right: 12px;
+        z-index: 10;
+        max-width: 260px;
+        font-size: 11px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body class="worldview-page">
+    <header class="site-header">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">Private Family Space</p>
+          <a href="./index.html" class="logo-link"><h1>JASAALS</h1></a>
+          <p class="subtitle">Jeffrey Alexander Spears + Anna Leah Spears</p>
+        </div>
+        <nav>
+          <a href="./index.html">Home</a>
+          <a href="./stories.html">Stories</a>
+          <a href="./tech.html">Techy Corner</a>
+          <a href="./vlog.html">Vlog</a>
+          <a href="./gallery.html">Gallery</a>
+          <a href="./worldview.html" class="active">WorldView</a>
+        </nav>
+      </div>
+    </header>
+
+    <div id="cesium-container">
+      <!-- Loading screen -->
+      <div id="loading-screen">
+        <div class="title">WORLDVIEW</div>
+        <div class="sub">Initializing 3D Globe &amp; Flight Data…</div>
+        <div class="spinner"></div>
+        <div class="sub" id="loading-status">Loading CesiumJS…</div>
+      </div>
+
+      <!-- HUD panels -->
+      <div id="hud">
+        <div class="hud-panel">
+          <h3>✈ Civil Flights</h3>
+          <div id="flight-count">–</div>
+          <div id="last-updated">–</div>
+        </div>
+        <div class="hud-panel">
+          <h3>🛡 Military / ADS-B Exchange</h3>
+          <div id="military-count">–</div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div id="controls">
+        <button class="ctrl-btn active" id="btn-civil" onclick="toggleLayer('civil')">✈ Civil Flights</button>
+        <button class="ctrl-btn active" id="btn-military" onclick="toggleLayer('military')">🛡 Military</button>
+        <button class="ctrl-btn active" id="btn-globe" onclick="toggleLayer('globe')">🌍 Google 3D Tiles</button>
+        <button class="ctrl-btn" id="btn-refresh" onclick="refreshFlights()">↻ Refresh Now</button>
+      </div>
+
+      <!-- Visual filters -->
+      <div id="mode-bar">
+        <button class="mode-btn active" onclick="setMode('normal')">Normal</button>
+        <button class="mode-btn" onclick="setMode('night')">Night Vision</button>
+        <button class="mode-btn" onclick="setMode('flir')">FLIR</button>
+        <button class="mode-btn" onclick="setMode('crt')">CRT</button>
+      </div>
+
+      <!-- Flight info popup -->
+      <div id="info-popup" class="hud-panel">
+        <h3 id="popup-callsign">–</h3>
+        <table>
+          <tr><td>Altitude</td><td id="popup-alt">–</td></tr>
+          <tr><td>Speed</td><td id="popup-spd">–</td></tr>
+          <tr><td>Heading</td><td id="popup-hdg">–</td></tr>
+          <tr><td>Country</td><td id="popup-country">–</td></tr>
+          <tr><td>ICAO</td><td id="popup-icao">–</td></tr>
+          <tr><td>On Ground</td><td id="popup-ground">–</td></tr>
+        </table>
+        <button class="ctrl-btn" style="margin-top:8px;pointer-events:all" onclick="closePopup()">✕ Close</button>
+      </div>
+
+      <!-- API key notice -->
+      <div id="api-notice" class="hud-panel">
+        <h3>⚠ Google 3D Tiles</h3>
+        <p style="margin:4px 0;font-size:11px;">Add your Google Maps API key to <code>worldview.html</code> (search for <code>YOUR_GOOGLE_MAPS_API_KEY</code>) to enable photorealistic 3D tiles.</p>
+      </div>
+    </div>
+
+    <!-- Auth -->
+    <script type="module">
+      import { requireAuth } from './auth.js';
+      await requireAuth();
+      document.body.style.visibility = 'visible';
+    </script>
+
+    <!-- CesiumJS -->
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.116/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.116/Build/Cesium/Cesium.js"></script>
+
+    <script>
+    // ════════════════════════════════════════════════════
+    //  CONFIG — swap in your own keys to unlock full data
+    // ════════════════════════════════════════════════════
+    const CESIUM_ION_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWE1OWUxNy1mMWZiLTQzYjYtYTQ1OS01YTc3OGIwOGJjYzAiLCJpZCI6OTYyMCwic2NvcGVzIjpbImFzc2V0cyIsInRlcnJhaW4iLCJhc3NldHNJbmdlc3QiLCJhcHBsaWNhdGlvbnMiLCJtYXAiLCJhc3NldHNXcml0ZSJdLCJpYXQiOjE1NjA4MDEwMTZ9.1FNiClUyk00II7oMDcpCmWIFuMlIpDYUMkxmFQe4kCI'; // default demo token
+    const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY'; // replace me!
+
+    // ── state ──
+    let viewer, civilDs, militaryDs;
+    let civilVisible = true, militaryVisible = true, globeVisible = true;
+    let refreshTimer = null;
+    const REFRESH_MS = 15000; // 15 seconds
+
+    // ════════════════════════════════════════════════════
+    //  INIT CESIUM
+    // ════════════════════════════════════════════════════
+    async function initCesium() {
+      setLoadStatus('Initializing Cesium Ion…');
+      Cesium.Ion.defaultAccessToken = CESIUM_ION_TOKEN;
+
+      viewer = new Cesium.Viewer('cesium-container', {
+        terrainProvider: await Cesium.createWorldTerrainAsync(),
+        baseLayerPicker: false,
+        geocoder: false,
+        homeButton: false,
+        sceneModePicker: false,
+        navigationHelpButton: false,
+        animation: false,
+        timeline: false,
+        fullscreenButton: false,
+        infoBox: false,
+        selectionIndicator: false,
+        shadows: false,
+        shouldAnimate: true,
+      });
+
+      // Dark atmosphere / space look
+      viewer.scene.backgroundColor = Cesium.Color.BLACK;
+      viewer.scene.skyBox.show = true;
+      viewer.scene.globe.enableLighting = true;
+
+      // ── Google Photorealistic 3D Tiles ──
+      if (GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY') {
+        setLoadStatus('Loading Google 3D Tiles…');
+        try {
+          const tileset = await Cesium.Cesium3DTileset.fromUrl(
+            'https://tile.googleapis.com/v1/3dtiles/root.json?key=' + GOOGLE_MAPS_API_KEY
+          );
+          viewer.scene.primitives.add(tileset);
+          viewer.scene.globe.show = false; // hide default globe when using Google tiles
+        } catch (e) {
+          console.warn('Google 3D Tiles failed:', e);
+          showApiNotice();
+        }
+      } else {
+        showApiNotice();
+      }
+
+      // Click handler for aircraft selection
+      viewer.screenSpaceEventHandler.setInputAction(onLeftClick, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+      setLoadStatus('Fetching flight data…');
+      await refreshFlights();
+      hideLoading();
+
+      // Auto-refresh
+      refreshTimer = setInterval(refreshFlights, REFRESH_MS);
+    }
+
+    function showApiNotice() {
+      document.getElementById('api-notice').style.display = 'block';
+    }
+
+    // ════════════════════════════════════════════════════
+    //  FLIGHT DATA — OpenSky Network (civil)
+    // ════════════════════════════════════════════════════
+    async function fetchCivilFlights() {
+      // OpenSky anonymous API — no auth, limited rate
+      const url = 'https://opensky-network.org/api/states/all?lamin=10&lomin=-130&lamax=75&lomax=60';
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('OpenSky HTTP ' + res.status);
+        const data = await res.json();
+        return data.states || [];
+      } catch (e) {
+        console.warn('OpenSky error:', e);
+        // Return demo data so the globe still looks lively
+        return generateDemoFlights(60);
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    //  FLIGHT DATA — ADS-B Exchange (military)
+    // ════════════════════════════════════════════════════
+    async function fetchMilitaryFlights() {
+      // ADS-B Exchange public military endpoint (no key required for basic access)
+      const url = 'https://opendata.adsb.fi/api/v2/mil';
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('ADS-B HTTP ' + res.status);
+        const data = await res.json();
+        return (data.aircraft || data.ac || []).filter(a => a.lat && a.lon);
+      } catch (e) {
+        console.warn('ADS-B Exchange error:', e);
+        return generateDemoMilitary(12);
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    //  DEMO DATA — shown when live API is unavailable
+    // ════════════════════════════════════════════════════
+    function generateDemoFlights(n) {
+      const out = [];
+      for (let i = 0; i < n; i++) {
+        out.push([
+          'DEMO' + i,            // icao24
+          'DEM' + i,             // callsign
+          'US',                  // origin country
+          null, null,
+          -120 + Math.random() * 100,  // longitude
+          25 + Math.random() * 40,     // latitude
+          8000 + Math.random() * 4000, // altitude m
+          false,                 // on ground
+          250 + Math.random() * 300,   // velocity m/s
+          Math.random() * 360,   // heading
+          null, null, null, null, null, null,
+        ]);
+      }
+      return out;
+    }
+
+    function generateDemoMilitary(n) {
+      const out = [];
+      const milTypes = ['F-16', 'B-52', 'E-3', 'C-17', 'KC-135', 'P-8'];
+      for (let i = 0; i < n; i++) {
+        out.push({
+          hex: 'MIL' + i,
+          flight: milTypes[i % milTypes.length] + '-' + (100 + i),
+          lat: 30 + Math.random() * 30,
+          lon: -110 + Math.random() * 80,
+          alt_baro: 25000 + Math.random() * 15000,
+          gs: 400 + Math.random() * 200,
+          track: Math.random() * 360,
+          country: 'US',
+        });
+      }
+      return out;
+    }
+
+    // ════════════════════════════════════════════════════
+    //  REFRESH — draw aircraft on globe
+    // ════════════════════════════════════════════════════
+    async function refreshFlights() {
+      const [civil, military] = await Promise.all([fetchCivilFlights(), fetchMilitaryFlights()]);
+
+      // Clear old entities
+      if (civilDs) viewer.dataSources.remove(civilDs, true);
+      if (militaryDs) viewer.dataSources.remove(militaryDs, true);
+
+      civilDs = new Cesium.CustomDataSource('civil');
+      militaryDs = new Cesium.CustomDataSource('military');
+
+      // ── Civil aircraft ──
+      civil.forEach(s => {
+        const lon = s[5], lat = s[6], alt = s[7] || 0;
+        const hdg = s[10] || 0;
+        if (!lon || !lat) return;
+        civilDs.entities.add({
+          id: 'civil-' + s[0],
+          position: Cesium.Cartesian3.fromDegrees(lon, lat, alt),
+          billboard: {
+            image: planeIcon('#4ade80'),
+            scale: 0.55,
+            rotation: Cesium.Math.toRadians(-hdg),
+            alignedAxis: Cesium.Cartesian3.UNIT_Z,
+            scaleByDistance: new Cesium.NearFarScalar(1e6, 1, 8e6, 0.3),
+          },
+          properties: {
+            type: 'civil',
+            callsign: (s[1] || '').trim() || s[0],
+            altitude: Math.round(alt) + ' m',
+            speed: Math.round((s[9] || 0) * 1.944) + ' kt',
+            heading: Math.round(hdg) + '°',
+            country: s[2] || '–',
+            icao: s[0],
+            onGround: s[8] ? 'Yes' : 'No',
+          },
+        });
+      });
+
+      // ── Military aircraft ──
+      military.forEach(a => {
+        const lon = parseFloat(a.lon), lat = parseFloat(a.lat);
+        const alt = (parseFloat(a.alt_baro) || 0) * 0.3048; // ft to m
+        const hdg = parseFloat(a.track) || 0;
+        if (isNaN(lon) || isNaN(lat)) return;
+        militaryDs.entities.add({
+          id: 'mil-' + a.hex,
+          position: Cesium.Cartesian3.fromDegrees(lon, lat, alt),
+          billboard: {
+            image: planeIcon('#f87171'),
+            scale: 0.65,
+            rotation: Cesium.Math.toRadians(-hdg),
+            alignedAxis: Cesium.Cartesian3.UNIT_Z,
+            scaleByDistance: new Cesium.NearFarScalar(1e6, 1.2, 8e6, 0.4),
+          },
+          properties: {
+            type: 'military',
+            callsign: (a.flight || a.hex || '').trim(),
+            altitude: Math.round(alt) + ' m',
+            speed: Math.round((parseFloat(a.gs) || 0)) + ' kt',
+            heading: Math.round(hdg) + '°',
+            country: a.country || '–',
+            icao: a.hex,
+            onGround: 'No',
+          },
+        });
+      });
+
+      await viewer.dataSources.add(civilDs);
+      await viewer.dataSources.add(militaryDs);
+
+      civilDs.show = civilVisible;
+      militaryDs.show = militaryVisible;
+
+      // Update HUD
+      document.getElementById('flight-count').textContent = civil.length.toLocaleString();
+      document.getElementById('military-count').textContent = military.length.toLocaleString();
+      document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    }
+
+    // ════════════════════════════════════════════════════
+    //  PLANE ICON — SVG canvas
+    // ════════════════════════════════════════════════════
+    function planeIcon(color) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 32; canvas.height = 32;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = color;
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.lineWidth = 1;
+      // Draw simple plane shape
+      ctx.beginPath();
+      ctx.moveTo(16, 2);
+      ctx.lineTo(20, 14);
+      ctx.lineTo(30, 16);
+      ctx.lineTo(20, 18);
+      ctx.lineTo(22, 28);
+      ctx.lineTo(16, 24);
+      ctx.lineTo(10, 28);
+      ctx.lineTo(12, 18);
+      ctx.lineTo(2, 16);
+      ctx.lineTo(12, 14);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      return canvas.toDataURL();
+    }
+
+    // ════════════════════════════════════════════════════
+    //  LAYER TOGGLES
+    // ════════════════════════════════════════════════════
+    function toggleLayer(layer) {
+      const btn = document.getElementById('btn-' + layer);
+      if (layer === 'civil') {
+        civilVisible = !civilVisible;
+        if (civilDs) civilDs.show = civilVisible;
+        btn.classList.toggle('active', civilVisible);
+      } else if (layer === 'military') {
+        militaryVisible = !militaryVisible;
+        if (militaryDs) militaryDs.show = militaryVisible;
+        btn.classList.toggle('active', militaryVisible);
+      } else if (layer === 'globe') {
+        globeVisible = !globeVisible;
+        viewer.scene.globe.show = globeVisible;
+        btn.classList.toggle('active', globeVisible);
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    //  VISUAL MODES (CRT / Night Vision / FLIR)
+    // ════════════════════════════════════════════════════
+    const postProcessStages = {};
+
+    function setMode(mode) {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Remove existing effects
+      if (viewer.scene.postProcessStages) {
+        viewer.scene.postProcessStages.removeAll();
+      }
+
+      const container = document.getElementById('cesium-container');
+      container.style.filter = '';
+
+      if (mode === 'night') {
+        container.style.filter = 'brightness(0.7) saturate(0) hue-rotate(120deg)';
+      } else if (mode === 'flir') {
+        container.style.filter = 'sepia(1) saturate(3) hue-rotate(320deg) contrast(1.4) brightness(0.85)';
+      } else if (mode === 'crt') {
+        container.style.filter = 'brightness(1.1) contrast(1.3) saturate(1.2)';
+        // Add scanline overlay via pseudo
+        container.style.backgroundImage =
+          'repeating-linear-gradient(0deg, rgba(0,0,0,0.07) 0px, rgba(0,0,0,0.07) 1px, transparent 1px, transparent 3px)';
+      } else {
+        container.style.backgroundImage = '';
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    //  CLICK — show flight info
+    // ════════════════════════════════════════════════════
+    function onLeftClick(movement) {
+      const picked = viewer.scene.pick(movement.position);
+      if (Cesium.defined(picked) && picked.id && picked.id.properties) {
+        const p = picked.id.properties;
+        document.getElementById('popup-callsign').textContent =
+          (p.type?.getValue() === 'military' ? '🛡 ' : '✈ ') + p.callsign.getValue();
+        document.getElementById('popup-alt').textContent = p.altitude.getValue();
+        document.getElementById('popup-spd').textContent = p.speed.getValue();
+        document.getElementById('popup-hdg').textContent = p.heading.getValue();
+        document.getElementById('popup-country').textContent = p.country.getValue();
+        document.getElementById('popup-icao').textContent = p.icao.getValue();
+        document.getElementById('popup-ground').textContent = p.onGround.getValue();
+        document.getElementById('info-popup').style.display = 'block';
+        // Fly to aircraft
+        viewer.flyTo(picked.id, { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-45), 500000) });
+      } else {
+        closePopup();
+      }
+    }
+
+    function closePopup() {
+      document.getElementById('info-popup').style.display = 'none';
+    }
+
+    // ════════════════════════════════════════════════════
+    //  LOADING UI HELPERS
+    // ════════════════════════════════════════════════════
+    function setLoadStatus(msg) {
+      const el = document.getElementById('loading-status');
+      if (el) el.textContent = msg;
+    }
+
+    function hideLoading() {
+      const el = document.getElementById('loading-screen');
+      if (el) {
+        el.style.transition = 'opacity 0.6s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 650);
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    //  BOOT
+    // ════════════════════════════════════════════════════
+    // Wait for auth + Cesium to both be ready before init
+    window.addEventListener('load', () => {
+      // Small delay to let auth.js finish
+      setTimeout(() => {
+        if (typeof Cesium !== 'undefined') {
+          initCesium().catch(e => {
+            console.error('WorldView init error:', e);
+            setLoadStatus('Error: ' + e.message);
+          });
+        } else {
+          setLoadStatus('Error: CesiumJS failed to load.');
+        }
+      }, 400);
+    });
+    </script>
+  </body>
+</html>
