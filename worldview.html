@@ -269,9 +269,11 @@ const SATELLITE_API_URL = 'https://broad-rice-b986.cloudflare-io4wf.workers.dev/
 
 viewer = new Cesium.Viewer('cesium-container', {
   terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-  imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-    url: 'https://tile.openstreetmap.org/'
-  }),
+  baseLayer: new Cesium.ImageryLayer(
+    new Cesium.OpenStreetMapImageryProvider({
+      url: 'https://tile.openstreetmap.org/'
+    })
+  ),
   baseLayerPicker: false,
   geocoder: false,
   homeButton: false,
@@ -297,8 +299,11 @@ viewer = new Cesium.Viewer('cesium-container', {
     setLoadStatus('Loading Google 3D Tiles…');
     try {
       googleTileset = await Cesium.Cesium3DTileset.fromUrl(
-        'https://tile.googleapis.com/v1/3dtiles/root.json?key=' + GOOGLE_MAPS_API_KEY
-      );
+  'https://tile.googleapis.com/v1/3dtiles/root.json?key=' + GOOGLE_MAPS_API_KEY,
+  {
+    showCreditsOnScreen: true
+  }
+);
       viewer.scene.primitives.add(googleTileset);
       viewer.scene.globe.show = false;
     } catch (e) {
@@ -337,10 +342,10 @@ viewer = new Cesium.Viewer('cesium-container', {
         const data = await res.json();
         return data.states || [];
       } catch (e) {
-        console.warn('OpenSky error:', e);
-        // Return demo data so the globe still looks lively
-        return generateDemoFlights(60);
-      }
+  console.warn('OpenSky error:', e);
+  document.getElementById('flight-count').textContent = 'ERR';
+  return [];
+}
     }
 
     // ════════════════════════════════════════════════════
@@ -367,9 +372,10 @@ viewer = new Cesium.Viewer('cesium-container', {
     const data = await res.json();
     return data.satellites || [];
   } catch (e) {
-    console.warn('Satellite API error:', e);
-    return [];
-  }
+  console.warn('ADS-B Exchange error:', e);
+  document.getElementById('military-count').textContent = 'ERR';
+  return [];
+}
 }
 
 function getSatellitePosition(sat, when = new Date()) {
